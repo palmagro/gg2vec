@@ -26,6 +26,7 @@ from bokeh.charts import BoxPlot
 from scipy import signal
 import math
 
+
 sys.setdefaultencoding('utf-8')
 
 class node2vec:
