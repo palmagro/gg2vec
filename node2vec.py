@@ -30,7 +30,7 @@ import math
 sys.setdefaultencoding('utf-8')
 
 class node2vec:
-
+    r_deleted = []
     sentences = {}
     degree = []
     r_types = []
@@ -103,24 +103,27 @@ class node2vec:
             np.save("models/" + self.bd , sentences)
             np.save("models/" + self.bd +"l-degree", self.degree)   
         else:
-            sentences = np.load("models/" + self.bd +".npy")
+            self.sentences_array = np.load("models/" + self.bd +".npy")
             self.degree = np.load("models/" + self.bd +"l-degree.npy")
-        for s in sentences:
+        for s in self.sentences_array:
             self.sentences[s[0]]=s[1:]
         print "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+".npy"
+        self.learn(m)
+
+    def learn(self,m):
         if not os.path.exists("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+".npy"):
             entrada = []
             for i in range(1,self.ns):
                 if m == "degree":
-                    s = sentences[weighted_choice(self.degree)]
+                    s = self.sentences_array[weighted_choice(self.degree)]
                 else:
-                    s = np.random.choice(sentences)
+                    s = np.random.choice(self.sentences_array)
                 s = eval(str(s))               
                 a = s[0] 
-                b = sample_wr(s[1:],l)
+                b = sample_wr(s[1:],self.w_size)
                 b.insert(0,a)
                 entrada.append(b)
-            self.w2v = word2vec.Word2Vec(entrada, size=nd, window=l, min_count=1, workers=4,sg=0)        
+            self.w2v = word2vec.Word2Vec(entrada, size=self.ndim, window=self.w_size, min_count=1, workers=4,sg=0)        
             self.w2v.save("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+".npy")
                      
         else:
@@ -289,32 +292,33 @@ class node2vec:
             return self.similares(nodo,[self.w2v[nodo]+self.m_vectors[rel]],[],tipo,label)[0][0]
 
     def aciertos_rel(self,rel,label,fast):
-        con = neo4j.CypherQuery(self.graph_db, "MATCH (a)-[r:"+rel+"]->(b) WHERE labels(a) <> [] AND labels(b) <> [] RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That").execute()
-        numaciertos = 0
-        total = 0
-        cuenta_misc = 0
-        for rs in self.n_types[con[0]["This"]]:   
-            cuenta_misc += 1
-            if rs in self.w2v and not '"' in rs and rs in self.sentences:
-                total = total + 1
-                if self.predice(rs,label,con[0]["That"],rel,fast) in self.sentences[rs]:
-                    numaciertos += 1
-        if total > 0:
-            return float(numaciertos)/float(total)*100
+        if not os.path.exists("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+r+".p"):
+            f = open( "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+r+".p", "w" )
+            con = neo4j.CypherQuery(self.graph_db, "MATCH (a)-[r:"+rel+"]->(b) WHERE labels(a) <> [] AND labels(b) <> [] RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That").execute()
+            numaciertos = 0
+            total = 0
+            cuenta_misc = 0
+            for rs in self.n_types[con[0]["This"]]:   
+                cuenta_misc += 1
+                if rs in self.w2v and not '"' in rs and rs in self.sentences:
+                    total = total + 1
+                    if self.predice(rs,label,con[0]["That"],rel,fast) in self.sentences[rs]:
+                        numaciertos += 1
+            if total > 0:
+                result = float(numaciertos)/float(total)*100
+            else:
+                result = 0
+            pickle.dump(result,f)
         else:
-            return 0
+            f = open( "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+r+".p", "r" )
+            result = 
+        return result
+
 
     def link_prediction_ratio(self):
         ratiosf = {}
         for r in self.r_types:
-            if not os.path.exists("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+r+".p"):
-                f = open( "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+r+".p", "w" )
-                ratiosf[r] = self.aciertos_rel(r,self.label,True)
-                pickle.dump(ratiosf[r],f)
-        else:
-            f = open( "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+r+".p", "r" )
-            ratiosf[r] = pickle.load(f)
-
+            ratiosf[r] = self.aciertos_rel(r,self.label,True)
         xname = []
         yname = []
         alpha = []
@@ -355,3 +359,20 @@ data=dict(
             ('link prediction ratio', '@ratios'),
         ])
         return p
+
+    def delete_rels(self,trainset_p):
+        for rt in self.r_types:
+            for r in self.r_types[rt]:
+                if random.random() < trainset_p:
+                    print "BORRANDO"
+                    for s in self.sentences_array:
+                        if s[0] == r["s"]:
+                            s.remove(r["t"])
+                        if s[0] == r["t"]:
+                            s.remove(r["s"])
+                    self.r_deleted.append([rt,r])
+        print "borradas"
+        print self.r_deleted
+            
+        
+
