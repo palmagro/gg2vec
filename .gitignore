@@ -1,2 +1,5 @@
 models/
+html/
+olds/
 *~
+*.ipynb
