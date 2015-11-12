@@ -22,6 +22,13 @@ colormapa = [
 "#cccccc",
 "#999999",
 "#3252b2"]
+colormapa2 = [
+    "#58dc95","#52dace","#f05578","#e1b565","#6c49de","#ff09dc","#BCF1ED", "#99999e", "#ff7f05", "#cab2db", "#6a3d9a",
+"#ffe8cd",
+"#dbc0ae",
+"#cccccc",
+"#999999",
+"#3252b2"]
 #e9d9af
 
 colormap = [
@@ -60,7 +67,10 @@ def pallete(t):
     if t == "nodes":
         return cycle_colors(test,palette=colormapn)
     else:
-        return cycle_colors(test,palette=colormapa)        
+        if t == "desv":
+            return cycle_colors(test,palette=colormapa2)
+        else:
+            return cycle_colors(test,palette=colormapa)        
 
 def rotatePoint(centerPoint,point,angle):
     """Rotates a point around another centerPoint. Angle is in degrees.

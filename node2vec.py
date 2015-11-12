@@ -11,7 +11,7 @@ from bokeh.models import(
     GMapPlot, Range1d, ColumnDataSource, LinearAxis,
     PanTool, WheelZoomTool, BoxZoomTool, ResetTool, ResizeTool, BoxSelectTool, HoverTool,
     BoxSelectionOverlay, GMapOptions,
-    NumeralTickFormatter, PrintfTickFormatter)
+    NumeralTickFormatter)#printfTickFormatter)
 from bokeh.charts import Line
 from gensim.models import word2vec
 import logging
@@ -30,12 +30,13 @@ import math
 sys.setdefaultencoding('utf-8')
 
 class node2vec:
-    r_deleted = []
+    r_deleted = {}
     sentences = {}
     degree = []
     r_types = []
     n_types = []
     r_types_d = []
+    r_desv = {}
     n_types_d = []
     m_vectors = []
     m_points = []
@@ -62,7 +63,7 @@ class node2vec:
         batches = 100
 
         if not os.path.exists("models/" + self.bd +".npy") or not os.path.exists("models/" + self.bd +"l-degree.npy"):
-            print "Conecting to BD..."
+            #print "Conecting to BD..."
             nn = neo4j.CypherQuery(self.graph_db, "match n return count(n) as cuenta1").execute()
             self.numnodes = nn[0].cuenta1
             sentences = []
@@ -73,7 +74,7 @@ class node2vec:
                 count += 1
                 consulta = "match (n)-[r]-(m) where n."+self.label+" <> '' return n,count(r) as d, n."+self.label+", collect(m."+self.label+") as collect skip "+str(self.batches*count)+" limit "+str(self.batches)
                 cuenta = neo4j.CypherQuery(self.graph_db, consulta).execute()
-                print "\r"+str(float((i / nb)*100))+ "%"
+                #print "\r"+str(float((i / nb)*100))+ "%"
                 for cuenta1 in cuenta:
                     name = cuenta1['n.'+label].replace(" ","_")
                     context = []
@@ -107,7 +108,7 @@ class node2vec:
             self.degree = np.load("models/" + self.bd +"l-degree.npy")
         for s in self.sentences_array:
             self.sentences[s[0]]=s[1:]
-        print "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+".npy"
+        #print "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+".npy"
         self.learn(m)
 
     def learn(self,m):
@@ -145,7 +146,7 @@ class node2vec:
                         rels[r.tipo] = [] 
                     rels[r.tipo].append(rel)
             self.r_types = rels
-            print "asasfafs"
+            #print "asasfafs"
             f.write(json.dumps(rels))
         else:
             f = open( "models/" + self.bd+"-trels.p", "r" )
@@ -169,28 +170,28 @@ class node2vec:
 
 
     def r_analysis(self):
-        print "Analisis de los tipos de relaciones"
+        #print "Analisis de los tipos de relaciones"
         if self.r_types == []:
             self.get_rels()    
         self.m_vectors = {}
         for t in self.r_types:
             vectors = []
             rels = self.r_types[t]
-            print "------------"+ t+"------------"
-            print "Number of Relations: "+ str(len(rels))
+            #print "------------"+ t+"------------"
+            #print "Number of Relations: "+ str(len(rels))
             for r in rels:      
                 if (r["s"] in self.w2v) and (r["t"] in self.w2v):
                     vectors.append(self.w2v[r["t"]] - self.w2v[r["s"]])
-            print "Number of Good Relations: "+ str(len(vectors))
+            #print "Number of Good Relations: "+ str(len(vectors))
             vector_medio = np.mean(vectors,axis=0)
             self.m_vectors[t] = np.mean(vectors,axis=0)
             media = 0
             for v in vectors:      
                 media = media + angle(v,vector_medio) 
             media = media / len(vectors)
-            print "Mean Angle Deviation:" +  str(media)
-            self.r_types_d.append(media)
-        print "Angulos entre vectores medios"
+            #print "Mean Angle Deviation:" +  str(media)
+            self.r_desv[t] = media
+        #print "Angulos entre vectores medios"
         self.angle_matrix= dict()
         for i,t in enumerate(self.r_types):
             self.angle_matrix[t] = dict()    
@@ -199,9 +200,9 @@ class node2vec:
                 if x not in self.angle_matrix:
                     self.angle_matrix [x]= dict()
                 self.angle_matrix[x][t] = angle(self.m_vectors[t],self.m_vectors[x])
-                if i <> j:
-                    print t+" vs. "+x
-                    print angle(self.m_vectors[t],self.m_vectors[x])            
+                #if i <> j:
+                    #print t+" vs. "+x
+                    #print angle(self.m_vectors[t],self.m_vectors[x])            
 
     def get_nodes(self):
         if not os.path.exists("models/" + self.bd+"-tnodes.p"):
@@ -222,7 +223,7 @@ class node2vec:
             self.n_types = pickle.load(f)
 
     def n_analysis(self):
-        print "Analisis de los tipos de nodos"
+        #print "Analisis de los tipos de nodos"
         if self.n_types == []:
             self.get_nodes()    
         self.m_points = dict()
@@ -240,24 +241,24 @@ class node2vec:
                 punto_medio[idx] = punto_medio[idx] / len(points)
             if nt not in self.m_points:
                 self.m_points[nt] = punto_medio
-            print "-------------------"+nt+"-------------------"
-            print "Number of Nodes: "+ str(len(points))
+            #print "-------------------"+nt+"-------------------"
+            #print "Number of Nodes: "+ str(len(points))
             dev = 0
             for p in points:
                 dev = dev + scipy.spatial.distance.euclidean(punto_medio,p)**2
             dev = math.sqrt((dev / len(points)))
             
-            print "Standard Deviation:"+str(dev)
+            #print "Standard Deviation:"+str(dev)
             if nt not in self.n_types_d:
                 self.n_types_d[nt] = dev
-            print "Variance:"+str(np.var(points))
+            #print "Variance:"+str(np.var(points))
             
-        print "Distancia entre los puntos medios"
-        for i,t in enumerate(self.m_points):
-            for j,x in enumerate(self.m_points):
-                if i <> j:
-                    print t+" vs. "+x
-                    print scipy.spatial.distance.euclidean(self.m_points[t] , self.m_points[x])                            
+        #print "Distancia entre los puntos medios"
+        #for i,t in enumerate(self.m_points):
+            #for j,x in enumerate(self.m_points):
+                #if i <> j:
+                    #print t+" vs. "+x
+                    #print scipy.spatial.distance.euclidean(self.m_points[t] , self.m_points[x])                            
 
     def analysis(self):
         self.n_analysis()
@@ -291,18 +292,21 @@ class node2vec:
         if fast:
             return self.similares(nodo,[self.w2v[nodo]+self.m_vectors[rel]],[],tipo,label)[0][0]
 
-    def aciertos_rel(self,rel,label,fast):
-        if not os.path.exists("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+r+".p"):
-            f = open( "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+r+".p", "w" )
+    def aciertos_rel(self,rel,label,fast,string):
+        if not os.path.exists("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+rel+string+".p"):
+            f = open( "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+rel+string+".p", "w" )
             con = neo4j.CypherQuery(self.graph_db, "MATCH (a)-[r:"+rel+"]->(b) WHERE labels(a) <> [] AND labels(b) <> [] RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That").execute()
+            print "MATCH (a)-[r:"+rel+"]->(b) WHERE labels(a) <> [] AND labels(b) <> [] RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That"
+            print con[0]
             numaciertos = 0
             total = 0
             cuenta_misc = 0
-            for rs in self.n_types[con[0]["This"]]:   
+            for d in self.r_deleted[rel]:
+                rs = d["s"]
                 cuenta_misc += 1
                 if rs in self.w2v and not '"' in rs and rs in self.sentences:
                     total = total + 1
-                    if self.predice(rs,label,con[0]["That"],rel,fast) in self.sentences[rs]:
+                    if self.predice(rs,label,con[0]["That"],rel,fast) == d["t"]:#in self.sentences[rs]:
                         numaciertos += 1
             if total > 0:
                 result = float(numaciertos)/float(total)*100
@@ -310,8 +314,8 @@ class node2vec:
                 result = 0
             pickle.dump(result,f)
         else:
-            f = open( "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+r+".p", "r" )
-            result = 
+            f = open( "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+rel+string+".p", "r" )
+            result = pickle.load(f)
         return result
 
 
@@ -319,6 +323,7 @@ class node2vec:
         ratiosf = {}
         for r in self.r_types:
             ratiosf[r] = self.aciertos_rel(r,self.label,True)
+
         xname = []
         yname = []
         alpha = []
@@ -364,15 +369,11 @@ data=dict(
         for rt in self.r_types:
             for r in self.r_types[rt]:
                 if random.random() < trainset_p:
-                    print "BORRANDO"
                     for s in self.sentences_array:
-                        if s[0] == r["s"]:
+                        if s[0] == r["s"] and r["t"] in s:
                             s.remove(r["t"])
-                        if s[0] == r["t"]:
+                        if s[0] == r["t"] and r["s"] in s:
                             s.remove(r["s"])
-                    self.r_deleted.append([rt,r])
-        print "borradas"
-        print self.r_deleted
-            
-        
-
+                    if not rt in self.r_deleted:
+                        self.r_deleted[rt] = []
+                    self.r_deleted[rt].append(r)
