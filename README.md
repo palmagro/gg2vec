@@ -1,6 +1,6 @@
 # node2vec
 
-Learning Neo4j DB content embedding via word2vec.
+Learning Neo4j DB content embedding via Deep Learning.
 
 from node2vec import *
 
