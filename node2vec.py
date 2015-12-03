@@ -32,6 +32,7 @@ sys.setdefaultencoding('utf-8')
 class node2vec:
     r_deleted = {}
     sentences = {}
+    sentences_array = []
     degree = []
     r_types = []
     n_types = []
@@ -46,7 +47,7 @@ class node2vec:
     mode = "normal"
 
 
-    def __init__(self,bd,port,user,pss,label,ns,nd,l,m):
+    def __init__(self,bd,port,user,pss,label,ns,nd,l,m,traversals):
 
         self.ndim = nd
         self.bd = bd
@@ -66,13 +67,13 @@ class node2vec:
             #print "Conecting to BD..."
             nn = neo4j.CypherQuery(self.graph_db, "match n return count(n) as cuenta1").execute()
             self.numnodes = nn[0].cuenta1
-            sentences = []
+            self.sentences_array = []
             nb = float(self.numnodes/batches)
             count = -1
             self.degree = []
             for i in range(1,int(nb)+1):
                 count += 1
-                consulta = "match (n)-[r]-(m) where n."+self.label+" <> '' return n,count(r) as d, n."+self.label+", collect(m."+self.label+") as collect skip "+str(self.batches*count)+" limit "+str(self.batches)
+                consulta = "match (n)-[r]-(m) where n."+self.label+" <> '' return n,count(r) as d, n."+self.label+", collect(m."+self.label+") as collect skip "+str(batches*count)+" limit "+str(  batches)
                 cuenta = neo4j.CypherQuery(self.graph_db, consulta).execute()
                 #print "\r"+str(float((i / nb)*100))+ "%"
                 for cuenta1 in cuenta:
@@ -98,10 +99,10 @@ class node2vec:
                     if len(context) >= l-1 and cuenta1.d is not None:
                         sentence = context
                         sentence.insert(0,name)
-                        sentences.append(sentence)
+                        self.sentences_array.append(sentence)
                         self.degree.append(cuenta1.d)
 
-            np.save("models/" + self.bd , sentences)
+            np.save("models/" + self.bd , self.sentences_array)
             np.save("models/" + self.bd +"l-degree", self.degree)   
         else:
             self.sentences_array = np.load("models/" + self.bd +".npy")
@@ -109,10 +110,10 @@ class node2vec:
         for s in self.sentences_array:
             self.sentences[s[0]]=s[1:]
         #print "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+".npy"
-        self.learn(m)
+        self.get_rels(traversals)
 
-    def learn(self,m):
-        if not os.path.exists("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+".npy"):
+    def learn(self,m,ts):
+        if not os.path.exists("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+"del"+str(ts)+".npy"):
             entrada = []
             for i in range(1,self.ns):
                 if m == "degree":
@@ -125,19 +126,27 @@ class node2vec:
                 b.insert(0,a)
                 entrada.append(b)
             self.w2v = word2vec.Word2Vec(entrada, size=self.ndim, window=self.w_size, min_count=1, workers=4,sg=0)        
-            self.w2v.save("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+".npy")
+            self.w2v.save("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+"del"+str(ts)+".npy")
                      
         else:
-            self.w2v = word2vec.Word2Vec.load("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+".npy")
+            self.w2v = word2vec.Word2Vec.load("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+"del"+str(ts)+".npy")
         print "Terminado:" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"
         self.analysis()
 
-    def get_rels(self):
+    def get_rels(self,traversals):
         if not os.path.exists("models/" + self.bd+"-trels.p"):
             f = open( "models/" + self.bd+"-trels.p", "w" )
-            consulta = neo4j.CypherQuery(self.graph_db, "match (n)-[r]->(m) return n."+self.label+" as s,m."+self.label+" as t ,r,type(r) as tipo").execute()
+            con = neo4j.CypherQuery(self.graph_db, "match (n)-[r]->(m) return n."+self.label+" as s,m."+self.label+" as t ,r,type(r) as tipo").execute()
+            consulta1 = []
+            for c in con:
+                consulta1.append(c)
+            consulta2 = []
+            for t in traversals:
+                con = neo4j.CypherQuery(self.graph_db, "match (n)"+t+"(m) return n."+self.label+" as s,m."+self.label+" as t ,r,'"+ t +"' as tipo").execute()
+                for c in con:
+                    consulta2.append(c)
             rels = dict()
-            for r in consulta:
+            for r in consulta1 + consulta2:
                 rel = dict()
                 if r.s and r.t:
                     rel["s"] = unicode(r.s.replace(" ","_"))
@@ -152,9 +161,16 @@ class node2vec:
             f = open( "models/" + self.bd+"-trels.p", "r" )
             self.r_types = json.loads(f.read())
         if not os.path.exists("models/" + self.bd+"-trels1.p"):
-            f = open( "models/" + self.bd+"-trels1.p", "w" )
-            consulta = neo4j.CypherQuery(self.graph_db, "MATCH (a)-[r]->(b) WHERE labels(a) <> [] AND labels(b) <> [] RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That ").execute()
+
+            consulta = []
+            for t in traversals:
+                con = neo4j.CypherQuery(self.graph_db, "MATCH (a)"+t+"(b) WHERE labels(a) <> [] AND labels(b) <> [] RETURN DISTINCT head(labels(a)) AS This, '"+t+"' as To, head(labels(b)) AS That ").execute()
+                for c in con:
+                    consulta.append(c)
+            con = neo4j.CypherQuery(self.graph_db, "MATCH (a)-[r]->(b) WHERE labels(a) <> [] AND labels(b) <> [] RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That ").execute()
             rels = dict()
+            for c in con:
+                consulta.append(c)
             for r in consulta:
                 rel = dict()
                 rel["s"] = unicode(r.This.replace(" ","_"))
@@ -163,6 +179,7 @@ class node2vec:
                 if rel["r"] not in rels:
                     rels[rel["r"]] = rel
             self.r_types1 = rels
+            f = open( "models/" + self.bd+"-trels1.p", "w" )
             f.write(json.dumps(rels))
         else:
             f = open( "models/" + self.bd+"-trels1.p", "r" )
@@ -233,24 +250,26 @@ class node2vec:
             for node in self.n_types[nt]:
                 if node in self.w2v:
                     points.append(self.w2v[node])
-            punto_medio = [0] * len(points[0])  
-            for p in points:
-                for idx,d in enumerate(p):
-                    punto_medio[idx] = punto_medio[idx] + d
-            for idx,d in enumerate(punto_medio):
-                punto_medio[idx] = punto_medio[idx] / len(points)
-            if nt not in self.m_points:
-                self.m_points[nt] = punto_medio
-            #print "-------------------"+nt+"-------------------"
-            #print "Number of Nodes: "+ str(len(points))
-            dev = 0
-            for p in points:
-                dev = dev + scipy.spatial.distance.euclidean(punto_medio,p)**2
-            dev = math.sqrt((dev / len(points)))
-            
-            #print "Standard Deviation:"+str(dev)
-            if nt not in self.n_types_d:
-                self.n_types_d[nt] = dev
+            if len(points) > 0:
+                punto_medio = [0] * len(points[0])  
+                
+                for p in points:
+                    for idx,d in enumerate(p):
+                        punto_medio[idx] = punto_medio[idx] + d
+                for idx,d in enumerate(punto_medio):
+                    punto_medio[idx] = punto_medio[idx] / len(points)
+                if nt not in self.m_points:
+                    self.m_points[nt] = punto_medio
+                #print "-------------------"+nt+"-------------------"
+                #print "Number of Nodes: "+ str(len(points))
+                dev = 0
+                for p in points:
+                    dev = dev + scipy.spatial.distance.euclidean(punto_medio,p)**2
+                dev = math.sqrt((dev / len(points)))
+                
+                #print "Standard Deviation:"+str(dev)
+                if nt not in self.n_types_d:
+                    self.n_types_d[nt] = dev
             #print "Variance:"+str(np.var(points))
             
         #print "Distancia entre los puntos medios"
@@ -265,7 +284,7 @@ class node2vec:
         self.r_analysis()
 
     def similares(self,nodo,positives,negatives,tipo,label):
-        my_list = self.w2v.most_similar(positives,negatives,topn=50000)
+        my_list = self.w2v.most_similar(positives,negatives,topn=5000)
         result = []
         for m in my_list:
             if m[0] in self.n_types[tipo] and m[0] != nodo:
@@ -279,7 +298,8 @@ class node2vec:
                 other = r["s"]
                 if(r["s"] == nodo):
                     other = r["t"]
-                p2 = neo4j.CypherQuery(self.graph_db, "match (n)-[:"+rel+"]-(m) where n."+label+' = "'+other+'" return m.'+label).execute()
+                p2 = neo4j.CypherQuery(self.graph_db, "match (n)-[:"+rel[0]+"]-(m) where n."+label+' = "'+other+'" return m.'+label).execute()
+                print p2
                 if len(p2) > 0:
                     for p in p2:
                         prop2 = p["m."+label]
@@ -290,28 +310,35 @@ class node2vec:
                         votos.append(prop1)
             return max(set(votos), key=votos.count)
         if fast:
-            return self.similares(nodo,[self.w2v[nodo]+self.m_vectors[rel]],[],tipo,label)[0][0]
+            print "similares"
+            sim = self.similares(nodo,[self.w2v[nodo]+self.m_vectors[rel]],[],tipo,label)                                
+            if len(sim) > 0:
+                return sim[0][0]
+            else:
+                return ""
 
     def aciertos_rel(self,rel,label,fast,string):
         if not os.path.exists("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+rel+string+".p"):
-            f = open( "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+rel+string+".p", "w" )
-            con = neo4j.CypherQuery(self.graph_db, "MATCH (a)-[r:"+rel+"]->(b) WHERE labels(a) <> [] AND labels(b) <> [] RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That").execute()
-            print "MATCH (a)-[r:"+rel+"]->(b) WHERE labels(a) <> [] AND labels(b) <> [] RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That"
-            print con[0]
             numaciertos = 0
             total = 0
             cuenta_misc = 0
             for d in self.r_deleted[rel]:
+                print "analizando relacion"
+                print rel
                 rs = d["s"]
                 cuenta_misc += 1
                 if rs in self.w2v and not '"' in rs and rs in self.sentences:
                     total = total + 1
-                    if self.predice(rs,label,con[0]["That"],rel,fast) == d["t"]:#in self.sentences[rs]:
+                    
+                    print self.predice(rs,label,self.r_types1[rel]["t"],rel,fast)
+                    print d["t"]
+                    if self.predice(rs,label,self.r_types1[rel]["t"],rel,fast) == d["t"]:#in self.sentences[rs]:
                         numaciertos += 1
             if total > 0:
                 result = float(numaciertos)/float(total)*100
             else:
                 result = 0
+            f = open( "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+rel+string+".p", "w" )
             pickle.dump(result,f)
         else:
             f = open( "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+self.mode+"-lpr-"+rel+string+".p", "r" )
@@ -366,14 +393,20 @@ data=dict(
         return p
 
     def delete_rels(self,trainset_p):
-        for rt in self.r_types:
-            for r in self.r_types[rt]:
-                if random.random() < trainset_p:
-                    for s in self.sentences_array:
-                        if s[0] == r["s"] and r["t"] in s:
-                            s.remove(r["t"])
-                        if s[0] == r["t"] and r["s"] in s:
-                            s.remove(r["s"])
-                    if not rt in self.r_deleted:
-                        self.r_deleted[rt] = []
-                    self.r_deleted[rt].append(r)
+        if not os.path.exists("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+self.mode+"del"+str(trainset_p)+".npy"):
+            for rt in self.r_types:
+                for r in self.r_types[rt]:
+                    print random.random() < trainset_p
+                    if random.random() < trainset_p:
+                        for s in self.sentences_array:
+                            if s[0] == r["s"] and r["t"] in s:
+                                s.remove(r["t"])
+                            if s[0] == r["t"] and r["s"] in s:
+                                s.remove(r["s"])
+                        if not rt in self.r_deleted:
+                            self.r_deleted[rt] = []
+                        self.r_deleted[rt].append(r)
+        else:
+            for rt in self.r_types:
+                if not rt in self.r_deleted:
+                    self.r_deleted[rt] = []

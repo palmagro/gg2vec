@@ -21,7 +21,7 @@ colormapa = [
 "#dbc0ae",
 "#cccccc",
 "#999999",
-"#3252b2"]
+"#3252b2","#FA5CE5","#DEFACE"]
 colormapa2 = [
     "#58dc95","#52dace","#f05578","#e1b565","#6c49de","#ff09dc","#BCF1ED", "#99999e", "#ff7f05", "#cab2db", "#6a3d9a",
 "#ffe8cd",
