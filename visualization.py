@@ -1,4 +1,62 @@
+import csv
 from matplotlib import pyplot as plt
+import random
+import numpy as np
+from bokeh.charts.utils import cycle_colors
+import seaborn as sns
+from sklearn import manifold
+from math import acos
+from bokeh.io import output_notebook
+from bokeh.plotting import figure, output_file, show, ColumnDataSource, vplot
+from bokeh.models import(
+    GMapPlot, Range1d, ColumnDataSource, LinearAxis,
+    PanTool, WheelZoomTool, BoxZoomTool, ResetTool, ResizeTool, BoxSelectTool, HoverTool,
+    BoxSelectionOverlay, GMapOptions,
+    NumeralTickFormatter)#printfTickFormatter)
+from bokeh.charts import Line
+import math 
+from aux import *
+
+colormapn = ["#EF4136","#FCAF17","#682F79","#1C75BC","#EF2A7B","#444444", "#a6cee3", "#1f78b4", "#b2df8a", "#33a02c","#fb9a99","FF6600"]
+colormap2 = [
+    "#fff9d8",
+"#ffe8cd",
+"#dbc0ae",
+"#cccccc",
+"#999999",
+"#3252b2"]
+colormapa = [
+    "#58dc91","#52daca","#f05574","#e1b560","#6c49da","#ff09d8","#BCF1ED", "#999999", "#ff7f00", "#cab2d6", "#6a3d9a",
+"#ffe8cd",
+"#dbc0ae",
+"#cccccc",
+"#999999",
+"#3252b2","#FA5CE5","#DEFACE"]
+colormapa2 = [
+    "#58dc95","#52dace","#f05578","#e1b565","#6c49de","#ff09dc","#BCF1ED", "#99999e", "#ff7f05", "#cab2db", "#6a3d9a",
+"#ffe8cd",
+"#dbc0ae",
+"#cccccc",
+"#999999",
+"#3252b2"]
+#e9d9af
+
+colormap = [
+    
+    "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a"
+]
+
+def pallete(t):
+    test = {}
+    for i in range(0,100):
+        test[str(i)] = np.random.normal(0,1,100)
+    if t == "nodes":
+        return cycle_colors(test,palette=colormapn)
+    else:
+        if t == "desv":
+            return cycle_colors(test,palette=colormapa2)
+        else:
+            return cycle_colors(test,palette=colormapa)  
 
 def links_figure(n2v):
     pal = pallete("links") 
@@ -76,6 +134,45 @@ def all_figure(n2v):
                 Y.append(n)
                 C.append(idx)
     #print X
+    print X
+    result = mds.fit_transform(np.asfarray(X,dtype='float'))
+    x = []
+    y = []
+    c = []
+    label = []
+    for idx,v in enumerate(Y):
+        label.append(v)
+        x.append(result[idx][0])
+        y.append(result[idx][1])
+        c.append(pal[C[idx]])
+
+    source = ColumnDataSource(data=dict(x=x,y=y, label=label))
+    #Nodes Plotting
+    o = figure(title="All Nodes",plot_height=n2v.ploth,plot_width=n2v.plotw)
+    print "d"
+    print c
+    o.text('x', 'y', label, source=source, )
+    o.circle('x', 'y', size=10, source=source,color=c )
+    return o
+
+def some_figure(n2v,c):
+    mds = manifold.MDS(n_components=2, metric=True, n_init=4, max_iter=300, verbose=0, eps=0.001, n_jobs=1, random_state=None, dissimilarity='euclidean')
+    X = []
+    Y = []
+    C = []
+    with open(c, 'rb') as csvfile:
+        spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
+        for idx,row in enumerate(spamreader):
+            if row[2] in n2v.w2v:
+                print row[0]
+                X.append(n2v.w2v[row[2]])
+                Y.append(row[2])
+                C.append(int(row[1]))
+
+    pal = pallete("nodes") 
+    #mds = manifold.TSNE(n_components=2)
+    #print X
+    print X
     result = mds.fit_transform(np.asfarray(X,dtype='float'))
     x = []
     y = []

@@ -1,40 +1,7 @@
-import random
 import numpy as np
-from bokeh.charts.utils import cycle_colors
-import seaborn as sns
+from math import acos
 def dotproduct(a,b):
 	return sum([a[i]*b[i] for i in range(len(a))])
-
-from math import acos
-import math 
-colormapn = ["#EF4136","#FCAF17","#682F79","#1C75BC","#EF2A7B","#444444", "#a6cee3", "#1f78b4", "#b2df8a", "#33a02c","#fb9a99","FF6600"]
-colormap2 = [
-    "#fff9d8",
-"#ffe8cd",
-"#dbc0ae",
-"#cccccc",
-"#999999",
-"#3252b2"]
-colormapa = [
-    "#58dc91","#52daca","#f05574","#e1b560","#6c49da","#ff09d8","#BCF1ED", "#999999", "#ff7f00", "#cab2d6", "#6a3d9a",
-"#ffe8cd",
-"#dbc0ae",
-"#cccccc",
-"#999999",
-"#3252b2","#FA5CE5","#DEFACE"]
-colormapa2 = [
-    "#58dc95","#52dace","#f05578","#e1b565","#6c49de","#ff09dc","#BCF1ED", "#99999e", "#ff7f05", "#cab2db", "#6a3d9a",
-"#ffe8cd",
-"#dbc0ae",
-"#cccccc",
-"#999999",
-"#3252b2"]
-#e9d9af
-
-colormap = [
-    
-    "#e31a1c", "#fdbf6f", "#ff7f00", "#cab2d6", "#6a3d9a"
-]
 
 #Calculates the size of a vector
 def veclength(a):
@@ -59,18 +26,6 @@ def sample_wr(population, k):
         j = _int(_random() * n)
         result[i] = population[j]
     return result
-
-def pallete(t):
-    test = {}
-    for i in range(0,100):
-        test[str(i)] = np.random.normal(0,1,100)
-    if t == "nodes":
-        return cycle_colors(test,palette=colormapn)
-    else:
-        if t == "desv":
-            return cycle_colors(test,palette=colormapa2)
-        else:
-            return cycle_colors(test,palette=colormapa)        
 
 def rotatePoint(centerPoint,point,angle):
     """Rotates a point around another centerPoint. Angle is in degrees.

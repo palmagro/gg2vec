@@ -1,8 +1,6 @@
 from collections import OrderedDict
 import json
 import pickle as pickle
-from overs import *
-from aux import *
 import os.path
 from sklearn import manifold
 from bokeh.io import output_notebook
@@ -25,7 +23,9 @@ import numpy.linalg as la
 from bokeh.charts import BoxPlot
 from scipy import signal
 import math
-
+from overs import *
+from aux import *
+from visualization import *
 
 sys.setdefaultencoding('utf-8')
 
@@ -64,7 +64,7 @@ class node2vec:
         batches = 100
 
         if not os.path.exists("models/" + self.bd +".npy") or not os.path.exists("models/" + self.bd +"l-degree.npy"):
-            #print "Conecting to BD..."
+            print "Conecting to BD..."
             nn = neo4j.CypherQuery(self.graph_db, "match n return count(n) as cuenta1").execute()
             self.numnodes = nn[0].cuenta1
             self.sentences_array = []
@@ -75,7 +75,7 @@ class node2vec:
                 count += 1
                 consulta = "match (n)-[r]-(m) where n."+self.label+" <> '' return n,count(r) as d, n."+self.label+", collect(m."+self.label+") as collect skip "+str(batches*count)+" limit "+str(  batches)
                 cuenta = neo4j.CypherQuery(self.graph_db, consulta).execute()
-                #print "\r"+str(float((i / nb)*100))+ "%"
+                print "\r"+str(float((i / nb)*100))+ "%"
                 for cuenta1 in cuenta:
                     name = cuenta1['n.'+label].replace(" ","_")
                     context = []
@@ -109,7 +109,7 @@ class node2vec:
             self.degree = np.load("models/" + self.bd +"l-degree.npy")
         for s in self.sentences_array:
             self.sentences[s[0]]=s[1:]
-        #print "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+".npy"
+        print "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+".npy"
         self.get_rels(traversals)
 
     def learn(self,m,ts):
@@ -187,7 +187,7 @@ class node2vec:
 
 
     def r_analysis(self):
-        #print "Analisis de los tipos de relaciones"
+        print "Analisis de los tipos de relaciones"
         if self.r_types == []:
             self.get_rels()    
         self.m_vectors = {}
@@ -208,7 +208,7 @@ class node2vec:
             media = media / len(vectors)
             #print "Mean Angle Deviation:" +  str(media)
             self.r_desv[t] = media
-        #print "Angulos entre vectores medios"
+        print "Angulos entre vectores medios"
         self.angle_matrix= dict()
         for i,t in enumerate(self.r_types):
             self.angle_matrix[t] = dict()    
@@ -240,7 +240,7 @@ class node2vec:
             self.n_types = pickle.load(f)
 
     def n_analysis(self):
-        #print "Analisis de los tipos de nodos"
+        print "Analisis de los tipos de nodos"
         if self.n_types == []:
             self.get_nodes()    
         self.m_points = dict()
