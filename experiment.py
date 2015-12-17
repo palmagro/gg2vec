@@ -1,4 +1,5 @@
 from node2vec import *
+from sklearn import neighbors
 import sys    # sys.setdefaultencoding is cancelled by site.py
 reload(sys)    # to re-enable sys.setdefaultencoding()
 sys.setdefaultencoding('utf-8')
@@ -19,7 +20,130 @@ class experiment:
         self.r_desv = {}
         self.n_desv = {}
 
-    def run(self,traversals,a,b,jump):
+    def ntype_prediction(self,a,b,jump):
+        pal = pallete("db")
+        X = []
+        Y = []
+
+
+        for i in range(a,b+1):
+            if self.param == "ns":
+                k = 3
+            if self.param == "l":
+                k = 3
+            if self.param == "ndim":
+                k = 3
+            if self.param == "k":
+                k = i
+            if not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)+".p"):
+                if self.param == "ns":
+                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,i*jump,200,6,self.mode,[])
+                    k = 3
+                if self.param == "l":
+                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,i*jump,self.mode,[])
+                    k = 3
+                if self.param == "ndim":
+                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,i*jump,6,self.mode,[])
+                    k = 3
+                if self.param == "k":
+                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,6,self.mode,[])
+                    k = i
+                n2v.learn(self.mode,self.trainset_p)
+                #k-neighbors for each node
+                total = 0
+                right = 0
+                for t in n2v.n_types:
+                    for n in  n2v.n_types[t]:
+                        if n in n2v.w2v and random.random() < self.trainset_p:
+                            votes = []
+                            d = 10
+                            while len(votes) < k:
+                                votes = []
+                                sim = n2v.w2v.most_similar(positive = [n],topn=d)
+                                for s in sim:
+                                    if n2v.ntype(s[0]) <> None:
+                                        votes.append(n2v.ntype(s[0]))
+                                d += 10          
+                            if t == max(set(votes), key=votes.count):
+                                right += 1
+                            total += 1
+
+                result = float(right)/float(total)
+                f = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)+".p", "w" )
+                pickle.dump(result,f)
+            else:
+                f = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)+".p", "r" )
+                result = pickle.load(f)
+            X.append(i*jump)
+            Y.append(result)
+        self.p.line(X, Y, color=pal[1],legend="ICH",line_width=1.5)
+        self.p.legend.background_fill_alpha = 0.5
+        return X,Y
+
+    def ltype_prediction(self,a,b,jump):
+        pal = pallete("db")
+        X = []
+        Y = []
+
+
+        for i in range(a,b+1):
+            if self.param == "ns":
+                k = 3
+            if self.param == "l":
+                k = 3
+            if self.param == "ndim":
+                k = 3
+            if self.param == "k":
+                k = i
+            if not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)+".p"):
+                if self.param == "ns":
+                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,i*jump,200,6,self.mode,[])
+                    k = 3
+                if self.param == "l":
+                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,i*jump,self.mode,[])
+                    k = 3
+                if self.param == "ndim":
+                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,i*jump,6,self.mode,[])
+                    k = 3
+                if self.param == "k":
+                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,6,self.mode,[])
+                    k = i
+                n2v.learn(self.mode,self.trainset_p)
+                #k-neighbors for each link
+                total = 0
+                right = 0
+                X,Y =[],[]
+                for t in n2v.r_types:
+                    for r in n2v.r_types[t]:
+                        X.append(r["v"])
+                        Y.append(r)
+                #n2v.connection.close()
+                #n2v.db.close()
+                #n2v.storage.close()
+
+                clf = neighbors.KNeighborsClassifier(k, "uniform")
+                clf.fit(X, Y)
+                for t in n2v.r_types:
+                    for r in n2v.r_types[t]:
+                        if random.random() < self.trainset_p:
+                            if clf.predict == r:
+                                right += 1
+                            total += 1
+                result = float(right)/float(total)
+                f = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)+".p", "w" )
+                pickle.dump(result,f)
+            else:
+                f = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)+".p", "r" )
+                result = pickle.load(f)
+            X.append(i*jump)
+            Y.append(result)
+        self.p.line(X, Y, color=pal[1],legend="ICH",line_width=1.5)
+        self.p.legend.background_fill_alpha = 0.5
+        return X,Y
+
+
+
+    def link_prediction(self,traversals,a,b,jump):
         pal = pallete("links")
         for i in range(a,b):
             if self.param == "ns":

@@ -9,7 +9,7 @@ from bokeh.models import(
     GMapPlot, Range1d, ColumnDataSource, LinearAxis,
     PanTool, WheelZoomTool, BoxZoomTool, ResetTool, ResizeTool, BoxSelectTool, HoverTool,
     BoxSelectionOverlay, GMapOptions,
-    NumeralTickFormatter)#printfTickFormatter)
+    NumeralTickFormatter)
 from bokeh.charts import Line
 from gensim.models import word2vec
 import logging
@@ -17,7 +17,7 @@ import random
 from py2neo import neo4j
 import numpy as np
 import scipy as scipy
-import sys    # sys.setdefaultencoding is cancelled by site.py
+import sys    # sys.setdefaultencoding is cancelled
 reload(sys)    # to re-enable sys.setdefaultencoding()
 import numpy.linalg as la
 from bokeh.charts import BoxPlot
@@ -26,6 +26,14 @@ import math
 from overs import *
 from aux import *
 from visualization import *
+
+from ZODB import DB
+from ZODB.FileStorage import FileStorage
+from ZODB.PersistentMapping import PersistentMapping
+import transaction
+from persistent import Persistent
+from persistent.dict import PersistentDict
+from persistent.list import PersistentList
 
 sys.setdefaultencoding('utf-8')
 
@@ -48,7 +56,7 @@ class node2vec:
 
 
     def __init__(self,bd,port,user,pss,label,ns,nd,l,m,traversals):
-
+        self.nodes = []
         self.ndim = nd
         self.bd = bd
         self.port = port
@@ -59,6 +67,8 @@ class node2vec:
         self.w_size = l        
         self.mode = m
 
+    
+        # Setting up Neo4j DB
         neo4j.authenticate("http://localhost:"+str(self.port), self.user, self.pss)
         self.graph_db = neo4j.GraphDatabaseService("http://neo4j:"+pss+"@localhost:"+str(self.port)+"/db/data/")
         batches = 100
@@ -79,7 +89,7 @@ class node2vec:
                 for cuenta1 in cuenta:
                     name = cuenta1['n.'+label].replace(" ","_")
                     context = []
-                #Extraemos contexto/relaciones
+                #Extracting context(relations)
                     for s in cuenta1['collect']:
                         if type(s) is list:
                             for x in s:
@@ -87,7 +97,7 @@ class node2vec:
                         else:
                             if s:
                                 context.append(str(s).replace(" ","_"))
-                #Extraemos contexto/propiedades    
+                #Extracting contexto(properties)
                     for t in cuenta1['n']:
                         s = cuenta1['n'][t]
                         if type(s) is list:
@@ -109,8 +119,9 @@ class node2vec:
             self.degree = np.load("models/" + self.bd +"l-degree.npy")
         for s in self.sentences_array:
             self.sentences[s[0]]=s[1:]
+
         print "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+".npy"
-        self.get_rels(traversals)
+        
 
     def learn(self,m,ts):
         if not os.path.exists("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+"del"+str(ts)+".npy"):
@@ -131,11 +142,11 @@ class node2vec:
         else:
             self.w2v = word2vec.Word2Vec.load("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m+"del"+str(ts)+".npy")
         print "Terminado:" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"
+        self.get_rels([])
         self.analysis()
 
     def get_rels(self,traversals):
-        if not os.path.exists("models/" + self.bd+"-trels.p"):
-            f = open( "models/" + self.bd+"-trels.p", "w" )
+        if self.bd+"-trels" not in self.root:
             con = neo4j.CypherQuery(self.graph_db, "match (n)-[r]->(m) return n."+self.label+" as s,m."+self.label+" as t ,r,type(r) as tipo").execute()
             consulta1 = []
             for c in con:
@@ -145,21 +156,23 @@ class node2vec:
                 con = neo4j.CypherQuery(self.graph_db, "match (n)"+t+"(m) return n."+self.label+" as s,m."+self.label+" as t ,r,'"+ t +"' as tipo").execute()
                 for c in con:
                     consulta2.append(c)
-            rels = dict()
+            self.root[self.bd+"-trels"] = PersistentDict()
             for r in consulta1 + consulta2:
-                rel = dict()
+                rel = PersistentDict()
                 if r.s and r.t:
-                    rel["s"] = unicode(r.s.replace(" ","_"))
-                    rel["t"] = unicode(r.t.replace(" ","_"))
-                    if not r.tipo in rels:
-                        rels[r.tipo] = [] 
-                    rels[r.tipo].append(rel)
-            self.r_types = rels
-            #print "asasfafs"
-            f.write(json.dumps(rels))
+                    if r["t"] in self.w2v and r["s"] in self.w2v:
+                        rel["s"] = unicode(r.s.replace(" ","_"))
+                        rel["t"] = unicode(r.t.replace(" ","_"))
+                        rel["v"] = self.w2v[r["t"]] - self.w2v[r["s"]]
+                        if not r.tipo in self.root[self.bd+"-trels"]:
+                            self.root[self.bd+"-trels"][r.tipo] = [] 
+                        self.root[self.bd+"-trels"][r.tipo].append(rel)
+            self.r_types = self.root[self.bd+"-trels"]
         else:
-            f = open( "models/" + self.bd+"-trels.p", "r" )
-            self.r_types = json.loads(f.read())
+            self.r_types = self.root[self.bd+"-trels"]
+        transaction.get().commit()
+        transaction.get().abort()
+
         if not os.path.exists("models/" + self.bd+"-trels1.p"):
 
             consulta = []
@@ -187,7 +200,7 @@ class node2vec:
 
 
     def r_analysis(self):
-        print "Analisis de los tipos de relaciones"
+        print "Relation Types Analysis"
         if self.r_types == []:
             self.get_rels()    
         self.m_vectors = {}
@@ -208,7 +221,7 @@ class node2vec:
             media = media / len(vectors)
             #print "Mean Angle Deviation:" +  str(media)
             self.r_desv[t] = media
-        print "Angulos entre vectores medios"
+        print "Mean Vector Angles"
         self.angle_matrix= dict()
         for i,t in enumerate(self.r_types):
             self.angle_matrix[t] = dict()    
@@ -240,7 +253,7 @@ class node2vec:
             self.n_types = pickle.load(f)
 
     def n_analysis(self):
-        print "Analisis de los tipos de nodos"
+        print "Node Type Analysis"
         if self.n_types == []:
             self.get_nodes()    
         self.m_points = dict()
@@ -391,7 +404,10 @@ data=dict(
             ('link prediction ratio', '@ratios'),
         ])
         return p
-
+    def ntype(self,n):
+        for t in self.n_types:
+            if n in self.n_types[t]:
+                return t
     def delete_rels(self,trainset_p):
         if not os.path.exists("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+self.mode+"del"+str(trainset_p)+".npy"):
             for rt in self.r_types:
