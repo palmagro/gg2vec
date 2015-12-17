@@ -60,8 +60,9 @@ class experiment:
                             while len(votes) < k:
                                 votes = []
                                 sim = n2v.w2v.most_similar(positive = [n],topn=d)
-                                for s in sim:
-                                    if n2v.ntype(s[0]) <> None:
+                                for idx,s in enumerate(sim):
+                                    if n2v.ntype(s[0]) < > None: 
+i                                                                                                          :
                                         votes.append(n2v.ntype(s[0]))
                                 d += 10          
                             if t == max(set(votes), key=votes.count):
@@ -108,27 +109,28 @@ class experiment:
                 if self.param == "k":
                     n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,6,self.mode,[])
                     k = i
+                n2v.connectZODB()
                 n2v.learn(self.mode,self.trainset_p)
                 #k-neighbors for each link
                 total = 0
                 right = 0
-                X,Y =[],[]
-                for t in n2v.r_types:
-                    for r in n2v.r_types[t]:
-                        X.append(r["v"])
-                        Y.append(r)
-                #n2v.connection.close()
-                #n2v.db.close()
-                #n2v.storage.close()
-
-                clf = neighbors.KNeighborsClassifier(k, "uniform")
-                clf.fit(X, Y)
+                X,Y,T =[],[],[]
                 for t in n2v.r_types:
                     for r in n2v.r_types[t]:
                         if random.random() < self.trainset_p:
-                            if clf.predict == r:
-                                right += 1
-                            total += 1
+                            T.append([r["v"],t])
+                            
+                        else:   
+                            X.append(r["v"])
+                            Y.append(t)
+
+                clf = neighbors.KNeighborsClassifier(k, "uniform")
+                clf.fit(X, Y)
+                for r in T:
+                    if clf.predict([r[0]])[0] == r[1]:
+                        right += 1
+                    total += 1
+                n2v.disconnectZODB()
                 result = float(right)/float(total)
                 f = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)+".p", "w" )
                 pickle.dump(result,f)

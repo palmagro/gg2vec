@@ -146,7 +146,7 @@ class node2vec:
         self.analysis()
 
     def get_rels(self,traversals):
-        if self.bd+"-trels" not in self.root:
+        if self.bd+"-trels" not in self.root.items():
             con = neo4j.CypherQuery(self.graph_db, "match (n)-[r]->(m) return n."+self.label+" as s,m."+self.label+" as t ,r,type(r) as tipo").execute()
             consulta1 = []
             for c in con:
@@ -170,8 +170,7 @@ class node2vec:
             self.r_types = self.root[self.bd+"-trels"]
         else:
             self.r_types = self.root[self.bd+"-trels"]
-        transaction.get().commit()
-        transaction.get().abort()
+
 
         if not os.path.exists("models/" + self.bd+"-trels1.p"):
 
@@ -426,3 +425,22 @@ data=dict(
             for rt in self.r_types:
                 if not rt in self.r_deleted:
                     self.r_deleted[rt] = []
+    def connectZODB(self):
+        if not os.path.exists(self.bd+'.fs'):
+            self.storage = FileStorage(self.bd+'.fs')
+            self.db = DB(self.storage)
+            self.connection = self.db.open()
+            self.root = self.connection.root()
+            self.root = PersistentDict()
+        else:
+            self.storage = FileStorage(self.bd+'.fs')
+            self.db = DB(self.storage)
+            self.connection = self.db.open()
+            self.root = self.connection.root()
+
+    def disconnectZODB(self):
+        transaction.commit()
+        self.connection.close()
+        self.db.close()
+        self.storage.close()
+
