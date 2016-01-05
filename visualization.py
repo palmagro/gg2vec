@@ -16,8 +16,9 @@ from bokeh.models import(
 from bokeh.charts import Line
 import math 
 from aux import *
+from node2vec import *
 
-colormapn = ["#EF4136","#FCAF17","#682F79","#1C75BC","#EF2A7B","#444444", "#a6cee3", "#1f78b4", "#b2df8a", "#33a02c","#fb9a99","FF6600"]
+colormapn = ["#1C75BC","#FCAF17","#EF4136","#682F79","#a6cee3", "#444444", "#1f78b4", "#b2df8a", "#33a02c","#fb9a99","FF6600"]
 colormap2 = [
     "#fff9d8",
 "#ffe8cd",
@@ -120,7 +121,7 @@ data=dict(
     ])
     return p
 
-def all_figure(n2v):
+def all_figure(n2v,tp,ntypes,legend):
     pal = pallete("nodes") 
     #mds = manifold.TSNE(n_components=2)
     mds = manifold.MDS(n_components=2, metric=True, n_init=4, max_iter=300, verbose=0, eps=0.001, n_jobs=1, random_state=None, dissimilarity='euclidean')
@@ -129,12 +130,13 @@ def all_figure(n2v):
     C = []
     for idx,nt in enumerate(n2v.n_types):
         for n in n2v.n_types[nt]:
-            if n in n2v.w2v:
-                X.append(n2v.w2v[n])
-                Y.append(n)
-                C.append(idx)
+            if random.random() < tp and nt in ntypes:    
+                if n in n2v.w2v:
+                    X.append(n2v.w2v[n])
+                    Y.append(n)
+                    C.append(idx)
     #print X
-    print X
+    #print X
     result = mds.fit_transform(np.asfarray(X,dtype='float'))
     x = []
     y = []
@@ -149,30 +151,75 @@ def all_figure(n2v):
     source = ColumnDataSource(data=dict(x=x,y=y, label=label))
     #Nodes Plotting
     o = figure(title="All Nodes",plot_height=n2v.ploth,plot_width=n2v.plotw)
-    print "d"
-    print c
-    o.text('x', 'y', label, source=source, )
+    for idx,nt in enumerate(n2v.n_types):
+        if nt in ntypes:   
+            o.line([], [], color=pal[idx],legend=nt,line_width=1.5)
+    #print "d"
+    #print c
+    if legend:
+        o.text('x', 'y', label, source=source, )
     o.circle('x', 'y', size=10, source=source,color=c )
     return o
 
-def some_figure(n2v,c):
+def all_links_figure(n2v,tp,ltypes,legend):
+    showed = []
+    pal = pallete("links") 
+    #mds = manifold.TSNE(n_components=2)
     mds = manifold.MDS(n_components=2, metric=True, n_init=4, max_iter=300, verbose=0, eps=0.001, n_jobs=1, random_state=None, dissimilarity='euclidean')
     X = []
     Y = []
     C = []
-    with open(c, 'rb') as csvfile:
-        spamreader = csv.reader(csvfile, delimiter=',', quotechar='|')
-        for idx,row in enumerate(spamreader):
-            if row[2] in n2v.w2v:
-                print row[0]
-                X.append(n2v.w2v[row[2]])
-                Y.append(row[2])
-                C.append(int(row[1]))
+    A = []
+    for idx,rt in enumerate(n2v.r_types):
+        for r in n2v.r_types[rt]:
+            if random.random() < tp and rt in ltypes:    
+                X.append(r["v"])
+                Y.append(r["t"])
+                C.append(idx)
+                A.append(rt == "GENRE")
+    result = mds.fit_transform(np.asfarray(X,dtype='float'))
+    x = []
+    y = []
+    c = []
+    label = []
+    for idx,v in enumerate(Y):
+        if v not in showed and A[idx]:
+            label.append(v)
+            showed.append(v)
+        else:
+            label.append("")            
+        x.append(result[idx][0])
+        y.append(result[idx][1])
+        c.append(pal[C[idx]])
+
+    source = ColumnDataSource(data=dict(x=x,y=y, label=label))
+    #Nodes Plotting
+    o = figure(title="All Links",plot_height=n2v.ploth,plot_width=n2v.plotw)
+    for idx,rt in enumerate(n2v.r_types):
+        if rt in ltypes:   
+            o.line([], [], color=pal[idx],legend=rt,line_width=1.5)
+    o.text('x', 'y', label, source=source, )
+    o.circle('x', 'y', size=10, source=source,color=c )
+    return o
+
+def some_figure(n2v,c,legend):
+    mds = manifold.MDS(n_components=2, metric=True, n_init=4, max_iter=300, verbose=0, eps=0.001, n_jobs=1, random_state=None, dissimilarity='euclidean')
+    X = []
+    Y = []
+    C = []
+    con = neo4j.CypherQuery(n2v.graph_db, c).execute()
+    for row in con:
+        if row[2] in n2v.w2v:
+            print row[0]
+            X.append(n2v.w2v[row[2]])
+            Y.append(row[2])
+            C.append(ord(row[1][0]) % 10)
+        
+
 
     pal = pallete("nodes") 
     #mds = manifold.TSNE(n_components=2)
     #print X
-    print X
     result = mds.fit_transform(np.asfarray(X,dtype='float'))
     x = []
     y = []
@@ -187,9 +234,8 @@ def some_figure(n2v,c):
     source = ColumnDataSource(data=dict(x=x,y=y, label=label))
     #Nodes Plotting
     o = figure(title="All Nodes",plot_height=n2v.ploth,plot_width=n2v.plotw)
-    print "d"
-    print c
-    o.text('x', 'y', label, source=source, )
+    if legend:
+        o.text('x', 'y', label, source=source, )
     o.circle('x', 'y', size=10, source=source,color=c )
     return o
 
