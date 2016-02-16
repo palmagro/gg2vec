@@ -26,7 +26,7 @@ import math
 from overs import *
 from aux import *
 from visualization import *
-
+from word2veckeras.word2veckeras import Word2VecKeras
 from ZODB import DB
 from ZODB.FileStorage import FileStorage
 from ZODB.PersistentMapping import PersistentMapping
@@ -130,10 +130,12 @@ class node2vec:
             self.path = self.path + "del"+str(ts)
         self.path = self.path +".npy"
         print "Learning:" + self.path
+        print "CCCC!"
         if not os.path.exists(self.path):
             print "Entra"
             entrada = []
             for i in range(1,self.ns):
+#                print i
                 if m == "degree":
                     s = self.sentences_array[weighted_choice(self.degree)]
                 else:
@@ -143,9 +145,10 @@ class node2vec:
                 b = sample_wr(s[1:],self.w_size)
                 b.insert(0,a)
                 entrada.append(b)
+            print "APRENDIENDO"
             self.w2v = word2vec.Word2Vec(entrada, size=self.ndim, window=self.w_size, min_count=1, workers=4,sg=0)        
             self.w2v.save(self.path)
-                     
+            print "TERMINO"   
         else:
             self.w2v = word2vec.Word2Vec.load(self.path)       
         self.get_nodes()

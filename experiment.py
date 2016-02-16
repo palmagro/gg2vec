@@ -26,62 +26,7 @@ class experiment:
         X = []
         Y = []
         i = 1
-        if self.param == "ns":
-            k = 3
-        if self.param == "l":
-            k = 3
-        if self.param == "ndim":
-            k = 3
-        if self.param == "k":
-            k = i
-        val = i + (jump * i)
-        if i == 1:
-            val = i
-        else:
-            val = i * jump            
-        if not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+".p"):
-            if self.param == "ns":
-                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,val,200,6,self.mode,[])
-                k = 3
-            if self.param == "l":
-                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,val,self.mode,[])
-                k = 3
-            if self.param == "ndim":
-                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,val,6,self.mode,[])
-                k = 3
-            if self.param == "k":
-                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,6,self.mode,[])
-                k = i
-            n2v.connectZODB()
-            n2v.learn(self.mode,self.trainset_p,False)
-            #k-neighbors for each node
-            total = 0
-            right = 0
-            for t in n2v.n_types:
-                for n in  n2v.n_types[t]:
-                    if n in n2v.w2v and random.random() < self.trainset_p:
-                        votes = []
-                        d = 10
-                        while len(votes) < k:
-                            votes = []
-                            sim = n2v.w2v.most_similar(positive = [n],topn=d)
-                            for idx,s in enumerate(sim):
-                                if n2v.ntype(s[0]) != None: 
-                                    votes.append(n2v.ntype(s[0]))
-                            d += 10          
-                        if t == max(set(votes), key=votes.count):
-                            right += 1
-                        total += 1
-
-            result = float(right)/float(total)
-            f = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+".p", "w" )
-            n2v.disconnectZODB()
-            pickle.dump(result,f)
-        else:
-            f = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+".p", "r" )
-            result = pickle.load(f)
-        X.append(val)
-        Y.append(result)
+      
         for i in range(a,b+1):
             if self.param == "ns":
                 k = 3
@@ -111,17 +56,20 @@ class experiment:
                 total = 0
                 right = 0
                 for t in n2v.n_types:
-                    for n in  n2v.n_types[t]:
+                    for n in n2v.n_types[t]:
                         if n in n2v.w2v and random.random() < self.trainset_p:
                             votes = []
-                            d = 10
+                            d = 50
                             while len(votes) < k:
                                 votes = []
                                 sim = n2v.w2v.most_similar(positive = [n],topn=d)
                                 for idx,s in enumerate(sim):
                                     if n2v.ntype(s[0]) != None: 
                                         votes.append(n2v.ntype(s[0]))
-                                d += 10          
+                                print "OTA"
+                                print d
+                                d += 50
+        
                             if t == max(set(votes), key=votes.count):
                                 right += 1
                             total += 1
