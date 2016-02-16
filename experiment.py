@@ -55,24 +55,36 @@ class experiment:
                 #k-neighbors for each node
                 total = 0
                 right = 0
-                for t in n2v.n_types:
-                    for n in n2v.n_types[t]:
-                        if n in n2v.w2v and random.random() < self.trainset_p:
+                clf = neighbors.KNeighborsClassifier(k+1, "uniform")
+                clf.fit(n2v.nodes_pos, n2v.nodes_type)
+#                for t in n2v.n_types:
+                for idx,i in enumerate(n2v.nodes_pos):
+                    if random.random() < self.trainset_p:
+                        #print total
+                        neigh = clf.kneighbors(n2v.nodes_pos[idx],return_distance = False)
+                        #print neigh[0][1:]
+                        votes = []                    
+                        for idx1,s in enumerate(neigh[0][1:]):
+                            votes.append(n2v.nodes_type[s])
+                        if n2v.nodes_type[idx] == max(set(votes), key=votes.count):
+                            right += 1
+#                        if clf.predict(n2v.nodes_pos[idx]) == n2v.nodes_type[idx]:
+#                            right += 1
+                        """ votes = []
+                        d = 3
+                        while len(votes) < k:
                             votes = []
-                            d = 50
-                            while len(votes) < k:
-                                votes = []
-                                sim = n2v.w2v.most_similar(positive = [n],topn=d)
-                                for idx,s in enumerate(sim):
-                                    if n2v.ntype(s[0]) != None: 
-                                        votes.append(n2v.ntype(s[0]))
-                                print "OTA"
-                                print d
-                                d += 50
-        
-                            if t == max(set(votes), key=votes.count):
-                                right += 1
-                            total += 1
+                            sim = n2v.w2v.most_similar(positive = [n],topn=d)
+                            for idx,s in enumerate(sim):
+                                if n2v.ntype(s[0]) != None: 
+                                    votes.append(n2v.ntype(s[0]))
+                            print "OTA"
+                            print d
+                            d += 3
+    
+                        if t == max(set(votes), key=votes.count):
+                            right += 1"""
+                        total += 1
 
                 result = float(right)/float(total)
                 f = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+".p", "w" )

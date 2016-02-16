@@ -146,16 +146,18 @@ class node2vec:
                 b.insert(0,a)
                 entrada.append(b)
             print "APRENDIENDO"
-            self.w2v = word2vec.Word2Vec(entrada, size=self.ndim, window=self.w_size, min_count=1, workers=4,sg=0)        
+            self.w2v = word2vec.Word2Vec(entrada, size=self.ndim, window=self.w_size, min_count=1, workers=4,sg=0) 
+
             self.w2v.save(self.path)
             print "TERMINO"   
         else:
-            self.w2v = word2vec.Word2Vec.load(self.path)       
+            self.w2v = word2vec.Word2Vec.load(self.path)  
         self.get_nodes()
         self.get_rels([])
-
+        self.delete_props() 
 
     def get_rels(self,traversals):
+        print self.bd+"-bd-"+str(self.ns)+"-ns-"+str(self.ndim) + "-ndim-"+str(self.w_size)+"-l" in self.root
         if self.bd+"-bd-"+str(self.ns)+"-ns-"+str(self.ndim) + "-ndim-"+str(self.w_size)+"-l" not in self.root:
             print "HOLA!"
             con = neo4j.CypherQuery(self.graph_db, "match (n)-[r]->(m) return n."+self.label+" as s,m."+self.label+" as t ,r,type(r) as tipo").execute()
@@ -167,6 +169,7 @@ class node2vec:
                 con = neo4j.CypherQuery(self.graph_db, "match (n)"+t+"(m) return n."+self.label+" as s,m."+self.label+" as t ,r,'"+ t +"' as tipo").execute()
                 for c in con:
                     consulta2.append(c)
+                      
             self.root[self.bd+"-bd-"+str(self.ns)+"-ns-"+str(self.ndim) + "-ndim-"+str(self.w_size)+"-l"] = PersistentDict()
             self.r_types = {}
             for r in consulta1 + consulta2:
@@ -180,6 +183,7 @@ class node2vec:
                             self.root[self.bd+"-bd-"+str(self.ns)+"-ns-"+str(self.ndim) + "-ndim-"+str(self.w_size)+"-l"][r.tipo] = [] 
                             self.r_types[r.tipo] = []
                         self.r_types[r.tipo].append(rel)
+                                  
                         self.root[self.bd+"-bd-"+str(self.ns)+"-ns-"+str(self.ndim) + "-ndim-"+str(self.w_size)+"-l"][r.tipo].append(rel)
         else:
             self.r_types = {}
@@ -477,4 +481,14 @@ data=dict(
         self.connection.close()
         self.db.close()
         self.storage.close()
-
+    #Creating nodes_pos dictionary with only nodes vectors (avoiding properties representation) and nodes_target with the type of each node
+    def delete_props(self):
+        self.nodes_pos = []
+        self.nodes_type = []
+        for t in self.n_types:
+            for n in self.n_types[t]:
+                if n in self.w2v:
+                    self.nodes_pos.append(self.w2v[n])
+                    self.nodes_type.append(t)
+        #print len(self.nodes_pos)
+        #print len(self.nodes_type)
