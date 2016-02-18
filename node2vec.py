@@ -32,6 +32,8 @@ from persistent import Persistent
 from persistent.dict import PersistentDict
 from persistent.list import PersistentList
 from copy import *
+from joblib import Parallel, delayed  
+import multiprocessing
 
 sys.setdefaultencoding('utf-8')
 
@@ -120,8 +122,9 @@ class node2vec:
 
         print "models/" + self.bd +".npy"
         
-
     def learn(self,m,ts,d):
+        num_cores = multiprocessing.cpu_count()
+        print "numCores = " + str(num_cores)
         self.path = "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m
         if d:
             self.path = self.path + "del"+str(ts)
@@ -131,19 +134,11 @@ class node2vec:
         if not os.path.exists(self.path) or self.iteraciones > 1:
             print "Entra"
             entrada = []
-            for i in range(1,self.ns):
-#                print i
-                if m == "degree":
-                    s = self.sentences_array[weighted_choice(self.degree)]
-                else:
-                    s = np.random.choice(self.sentences_array)
-                s = eval(str(s))               
-                a = s[0] 
-                b = sample_wr(s[1:],self.w_size)
-                b.insert(0,a)
-                entrada.append(b)
+            results = Parallel(n_jobs=num_cores, backend="threading")(delayed(generate_sample)(self.mode,self.sentences_array,self.degree,self.w_size) for i in range(1,self.ns))
+            for r in results:
+                entrada.append(r) 
             print "APRENDIENDO"
-            self.w2v = word2vec.Word2Vec(entrada, size=self.ndim, window=self.w_size, min_count=1, workers=4,sg=0) 
+            self.w2v = word2vec.Word2Vec(entrada, size=self.ndim, window=self.w_size, min_count=1, workers=num_cores,sg=0) 
 
             self.w2v.save(self.path)
             print "TERMINO"   

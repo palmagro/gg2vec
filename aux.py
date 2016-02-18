@@ -36,6 +36,17 @@ def rotatePoint(centerPoint,point,angle):
     temp_point = temp_point[0]+centerPoint[0] , temp_point[1]+centerPoint[1]
     return temp_point
 
+def generate_sample(mode,sentences_array,degree,w_size):
+    if mode == "degree":
+        s = sentences_array[weighted_choice(degree)]
+    else:
+        s = np.random.choice(sentences_array)
+    s = eval(str(s))               
+    a = s[0] 
+    b = sample_wr(s[1:],w_size)
+    b.insert(0,a)
+    return b
+
 import random
 
 def weighted_choice(weights):
