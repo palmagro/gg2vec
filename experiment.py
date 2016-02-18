@@ -4,7 +4,7 @@ from credentials import *
 import sys    # sys.setdefaultencoding is cancelled by site.py
 reload(sys)    # to re-enable sys.setdefaultencoding()
 sys.setdefaultencoding('utf-8')
-
+import multiprocessing
 
 class experiment:
     def __init__(self,bd,port,user,pss,label,mode,param,trainset_p,iteraciones):
@@ -58,36 +58,22 @@ class experiment:
                     #k-neighbors for each node
                     total = 0
                     right = 0
-                    clf = neighbors.KNeighborsClassifier(k+1, "uniform")
+                    clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
                     clf.fit(n2v.nodes_pos, n2v.nodes_type)
-    #                for t in n2v.n_types:
+                    pos = []
+                    types = []
                     for idx,i in enumerate(n2v.nodes_pos):
                         if random.random() < self.trainset_p:
-                            #print total
-                            neigh = clf.kneighbors(n2v.nodes_pos[idx],return_distance = False)
-                            #print neigh[0][1:]
-                            votes = []                    
-                            for idx1,s in enumerate(neigh[0][1:]):
-                                votes.append(n2v.nodes_type[s])
-                            if n2v.nodes_type[idx] == max(set(votes), key=votes.count):
-                                right += 1
-    #                        if clf.predict(n2v.nodes_pos[idx]) == n2v.nodes_type[idx]:
-    #                            right += 1
-                            """ votes = []
-                            d = 3
-                            while len(votes) < k:
-                                votes = []
-                                sim = n2v.w2v.most_similar(positive = [n],topn=d)
-                                for idx,s in enumerate(sim):
-                                    if n2v.ntype(s[0]) != None: 
-                                        votes.append(n2v.ntype(s[0]))
-                                print "OTA"
-                                print d
-                                d += 3
-        
-                            if t == max(set(votes), key=votes.count):
-                                right += 1"""
-                            total += 1
+                            pos.append(i)
+                            types.append(n2v.nodes_type[idx])
+                    neigh = clf.kneighbors(pos,return_distance = False)
+                    for idx,n in enumerate(neigh):
+                        votes = []                    
+                        for idx1,s in enumerate(neigh[idx][1:]):
+                            votes.append(n2v.nodes_type[s])
+                        if n2v.nodes_type[idx] == max(set(votes), key=votes.count):
+                            right += 1
+                        total += 1
                     print float(right)/float(total)
                     t += float(right)/float(total)
                     n2v.disconnectZODB()
@@ -129,15 +115,20 @@ class experiment:
                 for idx,t in enumerate(n2v.n_types):
                     matriz[idx+1][0] = t
                 #k-neighbors for each node
-                clf = neighbors.KNeighborsClassifier(k+1, "uniform")
+                clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
                 clf.fit(n2v.nodes_pos, n2v.nodes_type)
+                pos = []
+                types = []
                 for idx,i in enumerate(n2v.nodes_pos):
                     if random.random() < self.trainset_p:
-                        neigh = clf.kneighbors(n2v.nodes_pos[idx],return_distance = False)
-                        votes = []                    
-                        for idx1,s in enumerate(neigh[0][1:]):
-                            votes.append(n2v.nodes_type[s])
-                        matriz[dic[n2v.nodes_type[idx]]+1][dic[max(set(votes), key=votes.count)]+1] +=1
+                        pos.append(i)
+                        types.append(n2v.nodes_type[idx])
+                neigh = clf.kneighbors(pos,return_distance = False)
+                for idx,n in enumerate(neigh):
+                    votes = []                    
+                    for idx1,s in enumerate(neigh[idx][1:]):
+                        votes.append(n2v.nodes_type[s])
+                    matriz[dic[types[idx]]+1][dic[max(set(votes), key=votes.count)]+1] +=1
                 n2v.disconnectZODB()
                 print matriz
                 matrices[it] = matriz
