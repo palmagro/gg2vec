@@ -45,13 +45,13 @@ class experiment:
                         n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,val,200,6,self.mode,[],self.iteraciones)
                         k = 3
                     if self.param == "l":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,val,self.mode,[],self.iteraciones)
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,val,self.mode,[],self.iteraciones)
                         k = 3
                     if self.param == "ndim":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,val,6,self.mode,[],self.iteraciones)
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,val,6,self.mode,[],self.iteraciones)
                         k = 3
                     if self.param == "k":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,6,self.mode,[],self.iteraciones)
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,6,self.mode,[],self.iteraciones)
                         k = i
                     n2v.connectZODB()
                     n2v.learn(self.mode,self.trainset_p,False)

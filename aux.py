@@ -37,7 +37,6 @@ def rotatePoint(centerPoint,point,angle):
     return temp_point
 
 def generate_sample(mode,sentences_array,degree,w_size,i):
-    print i
     if mode == "degree":
         s = sentences_array[weighted_choice(degree)]
     else:

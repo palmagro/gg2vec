@@ -131,7 +131,7 @@ class node2vec:
         self.path = self.path +".npy"
         print "Learning:" + self.path
         print "CCCC!"
-        if not os.path.exists(self.path):# or self.iteraciones > 1:
+        if not os.path.exists(self.path) or self.iteraciones > 1:
             print "Entra"
             entrada = []
             results = Parallel(n_jobs=num_cores, backend="threading")(delayed(generate_sample)(self.mode,self.sentences_array,self.degree,self.w_size,i) for i in range(1,self.ns))
