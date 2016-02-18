@@ -7,7 +7,7 @@ sys.setdefaultencoding('utf-8')
 
 
 class experiment:
-    def __init__(self,bd,port,user,pss,label,mode,param,trainset_p):
+    def __init__(self,bd,port,user,pss,label,mode,param,trainset_p,iteraciones):
         self.bd = bd 
         self.mode = mode 
         self.port = port
@@ -20,6 +20,7 @@ class experiment:
         self.ratiosf = {}
         self.r_desv = {}
         self.n_desv = {}
+        self.iteraciones = iteraciones
 
     def ntype_prediction(self,a,b,jump):
         pal = pallete("db")
@@ -37,67 +38,116 @@ class experiment:
             if self.param == "k":
                 k = i
             val = i * jump            
-            if not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+".p"):
-                if self.param == "ns":
-                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,val,200,6,self.mode,[])
-                    k = 3
-                if self.param == "l":
-                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,val,self.mode,[])
-                    k = 3
-                if self.param == "ndim":
-                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,val,6,self.mode,[])
-                    k = 3
-                if self.param == "k":
-                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,6,self.mode,[])
-                    k = i
-                n2v.connectZODB()
-                n2v.learn(self.mode,self.trainset_p,False)
-                #k-neighbors for each node
-                total = 0
-                right = 0
-                clf = neighbors.KNeighborsClassifier(k+1, "uniform")
-                clf.fit(n2v.nodes_pos, n2v.nodes_type)
-#                for t in n2v.n_types:
-                for idx,i in enumerate(n2v.nodes_pos):
-                    if random.random() < self.trainset_p:
-                        #print total
-                        neigh = clf.kneighbors(n2v.nodes_pos[idx],return_distance = False)
-                        #print neigh[0][1:]
-                        votes = []                    
-                        for idx1,s in enumerate(neigh[0][1:]):
-                            votes.append(n2v.nodes_type[s])
-                        if n2v.nodes_type[idx] == max(set(votes), key=votes.count):
-                            right += 1
-#                        if clf.predict(n2v.nodes_pos[idx]) == n2v.nodes_type[idx]:
-#                            right += 1
-                        """ votes = []
-                        d = 3
-                        while len(votes) < k:
-                            votes = []
-                            sim = n2v.w2v.most_similar(positive = [n],topn=d)
-                            for idx,s in enumerate(sim):
-                                if n2v.ntype(s[0]) != None: 
-                                    votes.append(n2v.ntype(s[0]))
-                            print "OTA"
-                            print d
-                            d += 3
-    
-                        if t == max(set(votes), key=votes.count):
-                            right += 1"""
-                        total += 1
+            if not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"):
+                t = 0
+                for it in range(self.iteraciones):
+                    if self.param == "ns":
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,val,200,6,self.mode,[],self.iteraciones)
+                        k = 3
+                    if self.param == "l":
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,val,self.mode,[],self.iteraciones)
+                        k = 3
+                    if self.param == "ndim":
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,val,6,self.mode,[],self.iteraciones)
+                        k = 3
+                    if self.param == "k":
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,6,self.mode,[],self.iteraciones)
+                        k = i
+                    n2v.connectZODB()
+                    n2v.learn(self.mode,self.trainset_p,False)
+                    #k-neighbors for each node
+                    total = 0
+                    right = 0
+                    clf = neighbors.KNeighborsClassifier(k+1, "uniform")
+                    clf.fit(n2v.nodes_pos, n2v.nodes_type)
+    #                for t in n2v.n_types:
+                    for idx,i in enumerate(n2v.nodes_pos):
+                        if random.random() < self.trainset_p:
+                            #print total
+                            neigh = clf.kneighbors(n2v.nodes_pos[idx],return_distance = False)
+                            #print neigh[0][1:]
+                            votes = []                    
+                            for idx1,s in enumerate(neigh[0][1:]):
+                                votes.append(n2v.nodes_type[s])
+                            if n2v.nodes_type[idx] == max(set(votes), key=votes.count):
+                                right += 1
+    #                        if clf.predict(n2v.nodes_pos[idx]) == n2v.nodes_type[idx]:
+    #                            right += 1
+                            """ votes = []
+                            d = 3
+                            while len(votes) < k:
+                                votes = []
+                                sim = n2v.w2v.most_similar(positive = [n],topn=d)
+                                for idx,s in enumerate(sim):
+                                    if n2v.ntype(s[0]) != None: 
+                                        votes.append(n2v.ntype(s[0]))
+                                print "OTA"
+                                print d
+                                d += 3
+        
+                            if t == max(set(votes), key=votes.count):
+                                right += 1"""
+                            total += 1
+                    print float(right)/float(total)
+                    t += float(right)/float(total)
+                    n2v.disconnectZODB()
+                result = t / self.iteraciones
+                f = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "w" )
 
-                result = float(right)/float(total)
-                f = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+".p", "w" )
-                n2v.disconnectZODB()
                 pickle.dump(result,f)
             else:
-                f = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+".p", "r" )
+                f = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "r" )
                 result = pickle.load(f)
             X.append(val)
             Y.append(result)
         self.p.line(X, Y, color=pal[1],legend="ICH",line_width=1.5)
         self.p.legend.background_fill_alpha = 0.5
         return X,Y
+    
+    def ntype_conf_matrix(self):
+        k = 3
+        if not os.path.exists("models/ntype_conf_matrix" + self.bd +"ts"+str(self.trainset_p)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"):
+            matrices = [None] * self.iteraciones
+            #repetimos para self.iteraciones experimentos
+            for it in range(self.iteraciones):
+                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,6,self.mode,[],self.iteraciones)
+                n2v.connectZODB()
+                n2v.learn(self.mode,self.trainset_p,False)
+                #generamos un diccionario para saber las posiciones de cada tipo de nodo en la matriz
+                dic = dict()
+                for idx,t in enumerate(n2v.n_types):
+                    dic[t] = idx
+                #generamos la matriz para cada experimento
+                matriz = [0] * (len(n2v.n_types)+1)
+                for i in range(0,len(n2v.n_types)+1):
+                    matriz[i] = [0] * (len(n2v.n_types)+1)
+                    for idx,t in enumerate(n2v.n_types):
+                        if i == 0:
+                            matriz[i][idx+1] = t
+                        else:
+                            matriz[i][idx] = 0    
+                for idx,t in enumerate(n2v.n_types):
+                    matriz[idx+1][0] = t
+                #k-neighbors for each node
+                clf = neighbors.KNeighborsClassifier(k+1, "uniform")
+                clf.fit(n2v.nodes_pos, n2v.nodes_type)
+                for idx,i in enumerate(n2v.nodes_pos):
+                    if random.random() < self.trainset_p:
+                        neigh = clf.kneighbors(n2v.nodes_pos[idx],return_distance = False)
+                        votes = []                    
+                        for idx1,s in enumerate(neigh[0][1:]):
+                            votes.append(n2v.nodes_type[s])
+                        matriz[dic[n2v.nodes_type[idx]]+1][dic[max(set(votes), key=votes.count)]+1] +=1
+                n2v.disconnectZODB()
+                print matriz
+                matrices[it] = matriz
+            f = open( "models/ntype_conf_matrix" + self.bd +"ts"+str(self.trainset_p)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "w" )
+
+            pickle.dump(matrices,f)
+        else:
+            f = open( "models/ntype_conf_matrix" + self.bd +"ts"+str(self.trainset_p)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "r" )
+            matrices = pickle.load(f)
+        return matrices
 
     def ltype_prediction(self,a,b,jump):
         pal = pallete("db")
@@ -118,16 +168,16 @@ class experiment:
             if not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)+".p"):
                 print "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)+".p"
                 if self.param == "ns":
-                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,i*jump,200,6,self.mode,[])
+                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,i*jump,200,6,self.mode,[],self.iteraciones)
                     k = 3
                 if self.param == "l":
-                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,i*jump,self.mode,[])
+                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,i*jump,self.mode,[],self.iteraciones)
                     k = 3
                 if self.param == "ndim":
-                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,i*jump,6,self.mode,[])
+                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,i*jump,6,self.mode,[],self.iteraciones)
                     k = 3
                 if self.param == "k":
-                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,6,self.mode,[])
+                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,6,self.mode,[],self.iteraciones)
                     k = i
                 n2v.connectZODB()
                 n2v.learn(self.mode,self.trainset_p,False)

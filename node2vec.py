@@ -7,9 +7,7 @@ from bokeh.io import output_notebook
 from bokeh.plotting import figure, output_file, show, ColumnDataSource, vplot
 from bokeh.models import(
     GMapPlot, Range1d, ColumnDataSource, LinearAxis,
-    PanTool, WheelZoomTool, BoxZoomTool, ResetTool, ResizeTool, BoxSelectTool, HoverTool,
-    BoxSelectionOverlay, GMapOptions,
-    NumeralTickFormatter)
+    PanTool, WheelZoomTool, BoxZoomTool, ResetTool, ResizeTool, BoxSelectTool, HoverTool)
 from bokeh.charts import Line
 from gensim.models import word2vec
 import logging
@@ -26,7 +24,6 @@ import math
 from overs import *
 from aux import *
 from visualization import *
-from word2veckeras.word2veckeras import Word2VecKeras
 from ZODB import DB
 from ZODB.FileStorage import FileStorage
 from ZODB.PersistentMapping import PersistentMapping
@@ -56,7 +53,7 @@ class node2vec:
     mode = "normal"
 
 
-    def __init__(self,bd,port,user,pss,label,ns,nd,l,m,traversals):
+    def __init__(self,bd,port,user,pss,label,ns,nd,l,m,traversals,iteraciones):
         self.nodes = []
         self.ndim = nd
         self.bd = bd
@@ -67,11 +64,11 @@ class node2vec:
         self.ns = ns
         self.w_size = l        
         self.mode = m
-
+        self.iteraciones = iteraciones
     
         # Setting up Neo4j DB
         neo4j.authenticate("http://localhost:"+str(self.port), self.user, self.pss)
-        self.graph_db = neo4j.GraphDatabaseService("http://neo4j:"+pss+"@localhost:"+str(self.port)+"/db/data/")
+        self.graph_db = neo4j.Graph("http://neo4j:"+pss+"@localhost:"+str(self.port)+"/db/data/")
         batches = 100
 
         if not os.path.exists("models/" + self.bd +".npy") or not os.path.exists("models/" + self.bd +"l-degree.npy"):
@@ -131,7 +128,7 @@ class node2vec:
         self.path = self.path +".npy"
         print "Learning:" + self.path
         print "CCCC!"
-        if not os.path.exists(self.path):
+        if not os.path.exists(self.path) or self.iteraciones > 1:
             print "Entra"
             entrada = []
             for i in range(1,self.ns):
@@ -153,7 +150,7 @@ class node2vec:
         else:
             self.w2v = word2vec.Word2Vec.load(self.path)  
         self.get_nodes()
-        self.get_rels([])
+        #self.get_rels([])
         self.delete_props() 
 
     def get_rels(self,traversals):
@@ -490,5 +487,5 @@ data=dict(
                 if n in self.w2v:
                     self.nodes_pos.append(self.w2v[n])
                     self.nodes_type.append(t)
-        #print len(self.nodes_pos)
-        #print len(self.nodes_type)
+        print len(self.nodes_pos)
+        print len(self.nodes_type)

@@ -3,16 +3,13 @@ from matplotlib import pyplot as plt
 import random
 import numpy as np
 from bokeh.charts.utils import cycle_colors
-import seaborn as sns
 from sklearn import manifold
 from math import acos
 from bokeh.io import output_notebook
 from bokeh.plotting import figure, output_file, show, ColumnDataSource, vplot
 from bokeh.models import(
     GMapPlot, Range1d, ColumnDataSource, LinearAxis,
-    PanTool, WheelZoomTool, BoxZoomTool, ResetTool, ResizeTool, BoxSelectTool, HoverTool,
-    BoxSelectionOverlay, GMapOptions,
-    NumeralTickFormatter)#printfTickFormatter)
+    PanTool, WheelZoomTool, BoxZoomTool, ResetTool, ResizeTool, BoxSelectTool, HoverTool)#printfTickFormatter)
 from bokeh.charts import Line
 import math 
 from aux import *
