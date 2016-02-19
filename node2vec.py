@@ -70,7 +70,7 @@ class node2vec:
     
         # Setting up Neo4j DB
         neo4j.authenticate("http://localhost:"+str(self.port), self.user, self.pss)
-        self.graph_db = neo4j.Graph("http://neo4j:"+pss+"@localhost:"+str(self.port)+"/db/data/")
+        self.graph_db = neo4j.GraphDatabaseService("http://neo4j:"+pss+"@localhost:"+str(self.port)+"/db/data/")
         batches = 100
 
         if not os.path.exists("models/" + self.bd +".npy") or not os.path.exists("models/" + self.bd +"l-degree.npy"):
@@ -145,71 +145,33 @@ class node2vec:
         else:
             self.w2v = word2vec.Word2Vec.load(self.path)  
         self.get_nodes()
-        #self.get_rels([])
+        self.get_rels([])
         self.delete_props() 
 
     def get_rels(self,traversals):
-        print self.bd+"-bd-"+str(self.ns)+"-ns-"+str(self.ndim) + "-ndim-"+str(self.w_size)+"-l" in self.root
-        if self.bd+"-bd-"+str(self.ns)+"-ns-"+str(self.ndim) + "-ndim-"+str(self.w_size)+"-l" not in self.root:
-            print "HOLA!"
-            con = neo4j.CypherQuery(self.graph_db, "match (n)-[r]->(m) return n."+self.label+" as s,m."+self.label+" as t ,r,type(r) as tipo").execute()
-            consulta1 = []
-            for c in con:
-                consulta1.append(c)
-            consulta2 = []
-            for t in traversals:
-                con = neo4j.CypherQuery(self.graph_db, "match (n)"+t+"(m) return n."+self.label+" as s,m."+self.label+" as t ,r,'"+ t +"' as tipo").execute()
-                for c in con:
-                    consulta2.append(c)
-                      
-            self.root[self.bd+"-bd-"+str(self.ns)+"-ns-"+str(self.ndim) + "-ndim-"+str(self.w_size)+"-l"] = PersistentDict()
-            self.r_types = {}
-            for r in consulta1 + consulta2:
-                rel = PersistentDict()
-                if r.t and r.s:
-                    if r["t"].replace(" ","_") in self.w2v and r["s"].replace(" ","_") in self.w2v:
-                        rel["s"] = unicode(r.s.replace(" ","_"))
-                        rel["t"] = unicode(r.t.replace(" ","_"))
-                        rel["v"] = self.w2v[r["t"].replace(" ","_")] - self.w2v[r["s"].replace(" ","_")]
-                        if not r.tipo in self.root[self.bd+"-bd-"+str(self.ns)+"-ns-"+str(self.ndim) + "-ndim-"+str(self.w_size)+"-l"]:
-                            self.root[self.bd+"-bd-"+str(self.ns)+"-ns-"+str(self.ndim) + "-ndim-"+str(self.w_size)+"-l"][r.tipo] = [] 
-                            self.r_types[r.tipo] = []
-                        self.r_types[r.tipo].append(rel)
-                                  
-                        self.root[self.bd+"-bd-"+str(self.ns)+"-ns-"+str(self.ndim) + "-ndim-"+str(self.w_size)+"-l"][r.tipo].append(rel)
+        if not os.path.exists("models/" + self.bd+"-trels.p"):
+            f = open( "models/" + self.bd+"-trels.p", "w" )
+            consulta = neo4j.CypherQuery(self.graph_db, "match (n)-[r]->(m) return n."+self.label+" as s,m."+self.label+" as t ,r,type(r) as tipo").execute()
+            todas = []
+            for c in consulta:
+                todas.append([c.s,c.tipo,c.t])
+            pickle.dump(todas,f)
         else:
-            self.r_types = {}
-            for t in self.root[self.bd+"-bd-"+str(self.ns)+"-ns-"+str(self.ndim) + "-ndim-"+str(self.w_size)+"-l"]:
-                if t not in self.r_types:
-                    self.r_types[t] = []
-                for r in self.root[self.bd+"-bd-"+str(self.ns)+"-ns-"+str(self.ndim) + "-ndim-"+str(self.w_size)+"-l"][t]:
-                    self.r_types[t].append(r.copy())
-
-
-        if not os.path.exists("models/" + self.bd+"-trels1.p"):
-            consulta = []
-            for t in traversals:
-                con = neo4j.CypherQuery(self.graph_db, "MATCH (a)"+t+"(b) WHERE labels(a) <> [] AND labels(b) <> [] RETURN DISTINCT head(labels(a)) AS This, '"+t+"' as To, head(labels(b)) AS That ").execute()
-                for c in con:
-                    consulta.append(c)
-            con = neo4j.CypherQuery(self.graph_db, "MATCH (a)-[r]->(b) WHERE labels(a) <> [] AND labels(b) <> [] RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That ").execute()
-            rels = dict()
-            for c in con:
-                consulta.append(c)
-            for r in consulta:
-                rel = dict()
-                rel["s"] = unicode(r.This.replace(" ","_"))
-                rel["r"] = unicode(r.To.replace(" ","_"))
-                rel["t"] = unicode(r.That.replace(" ","_"))
-                if rel["r"] not in rels:
-                    rels[rel["r"]] = rel
-            self.r_types1 = rels
-            f = open( "models/" + self.bd+"-trels1.p", "w" )
-            f.write(json.dumps(rels))
-        else:
-            f = open( "models/" + self.bd+"-trels1.p", "r" )
-            self.r_types1 = json.loads(f.read())
-
+            f = open( "models/" + self.bd+"-trels.p", "r" )
+            todas = pickle.load(f)
+        links = dict()
+        for l in todas:
+            link = dict()
+            if l[0] and l[1] and l[2]:
+                link["tipo"] = l[1]
+                link["s"] = l[0].replace(" ","_")
+                link["t"] = l[2].replace(" ","_")
+                if link["s"] in self.w2v and link["t"] in self.w2v:
+                    link["v"] = self.w2v[link["t"]] - self.w2v[link["s"]]
+                    if not link["tipo"] in links:
+                        links[link["tipo"]] = [] 
+                    links[link["tipo"]].append(link)
+        self.r_types = links
 
     def r_analysis(self):
         print "Relation Types Analysis"
@@ -474,6 +436,7 @@ data=dict(
         self.db.close()
         self.storage.close()
     #Creating nodes_pos dictionary with only nodes vectors (avoiding properties representation) and nodes_target with the type of each node
+
     def delete_props(self):
         self.nodes_pos = []
         self.nodes_type = []

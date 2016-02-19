@@ -27,7 +27,6 @@ class experiment:
         X = []
         Y = []
         i = 1
-      
         for i in range(a,b+1):
             if self.param == "ns":
                 k = 3
@@ -133,19 +132,32 @@ class experiment:
                 print matriz
                 matrices[it] = matriz
             f = open( "models/ntype_conf_matrix" + self.bd +"ts"+str(self.trainset_p)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "w" )
-
             pickle.dump(matrices,f)
         else:
             f = open( "models/ntype_conf_matrix" + self.bd +"ts"+str(self.trainset_p)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "r" )
             matrices = pickle.load(f)
-        return matrices
+        #calculando la matriz de confusion promedios de n experimentos
+        matriz_promedio = [None] * (len(matrices[0]))
+        for i in range(0,len(matrices[0])):
+            matriz_promedio[i] = [0] * (len(matrices[0]))
+        for idx,t in enumerate(matrices[0]):
+            matriz_promedio[0][idx] = t[0]
+        for idx,t in enumerate(matrices[0]):
+            matriz_promedio[idx][0] = t[0]
+        for i in range(1,len(matrices[0])):
+            for j in range(1,len(matrices[0])):
+                suma = 0
+                for m in range(self.iteraciones):
+                    suma += matrices[m][i][j]
+                matriz_promedio[i][j] = suma/self.iteraciones
+        return matriz_promedio
+
 
     def ltype_prediction(self,a,b,jump):
         pal = pallete("db")
         X = []
         Y = []
-
-
+        i = 1
         for i in range(a,b+1):
             if self.param == "ns":
                 k = 3
@@ -155,50 +167,61 @@ class experiment:
                 k = 3
             if self.param == "k":
                 k = i
-
-            if not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)+".p"):
-                print "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)+".p"
-                if self.param == "ns":
-                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,i*jump,200,6,self.mode,[],self.iteraciones)
-                    k = 3
-                if self.param == "l":
-                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,i*jump,self.mode,[],self.iteraciones)
-                    k = 3
-                if self.param == "ndim":
-                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,i*jump,6,self.mode,[],self.iteraciones)
-                    k = 3
-                if self.param == "k":
-                    n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000000,200,6,self.mode,[],self.iteraciones)
-                    k = i
-                n2v.connectZODB()
-                n2v.learn(self.mode,self.trainset_p,False)
-                #k-neighbors for each link
-                total = 0
-                right = 0
-                X,Y,T =[],[],[]
-                for t in n2v.r_types:
-                    for r in n2v.r_types[t]:
-                        if random.random() < self.trainset_p+0.1:
-                            T.append([r["v"],t])
-                            
-                        else:   
-                            X.append(r["v"])
-                            Y.append(t)
-
-                clf = neighbors.KNeighborsClassifier(k, "uniform")
-                clf.fit(X, Y)
-                for r in T:
-                    if clf.predict([r[0]])[0] == r[1]:
-                        right += 1
-                    total += 1
-                n2v.disconnectZODB()
-                result = float(right)/float(total)
-                f = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)+".p", "w" )
+            val = i * jump            
+            if not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"):
+                final = 0
+                for it in range(self.iteraciones):
+                    if self.param == "ns":
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,val,200,6,self.mode,[],self.iteraciones)
+                        k = 3
+                    if self.param == "l":
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,val,self.mode,[],self.iteraciones)
+                        k = 3
+                    if self.param == "ndim":
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,val,6,self.mode,[],self.iteraciones)
+                        k = 3
+                    if self.param == "k":
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,6,self.mode,[],self.iteraciones)
+                        k = i
+                    n2v.connectZODB()
+                    n2v.learn(self.mode,self.trainset_p,False)
+                    #k-neighbors for each node
+                    total = 0
+                    right = 0
+                    clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
+                    link_vectors = []
+                    link_types = []
+                    for t in n2v.r_types:
+                        for r in n2v.r_types[t]:
+                            link_vectors.append(r["v"])
+                            link_types.append(t)
+                    print "a entrenar kneighbors"
+                    clf.fit(link_vectors, link_types)
+                    print "entrenado kneighbors"
+                    pos = []
+                    types = []
+                    for idx,i in enumerate(link_vectors):
+                        if random.random() < self.trainset_p:
+                            pos.append(i)
+                            types.append(link_types[idx])
+                    neigh = clf.kneighbors(pos,return_distance = False)
+                    for idx,n in enumerate(neigh):
+                        votes = []                    
+                        for idx1,s in enumerate(neigh[idx][1:]):
+                            votes.append(link_types[s])
+                        if types[idx] == max(set(votes), key=votes.count):
+                            right += 1
+                        total += 1
+                    print float(right)/float(total)
+                    final += float(right)/float(total)
+                    n2v.disconnectZODB()
+                result = final / self.iteraciones
+                f = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "w" )
                 pickle.dump(result,f)
             else:
-                f = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)+".p", "r" )
+                f = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "r" )
                 result = pickle.load(f)
-            X.append(i*jump)
+            X.append(val)
             Y.append(result)
         self.p.line(X, Y, color=pal[1],legend="ICH",line_width=1.5)
         self.p.legend.background_fill_alpha = 0.5
