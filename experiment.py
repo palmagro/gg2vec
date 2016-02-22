@@ -70,7 +70,7 @@ class experiment:
                         votes = []                    
                         for idx1,s in enumerate(neigh[idx][1:]):
                             votes.append(n2v.nodes_type[s])
-                        if n2v.nodes_type[idx] == max(set(votes), key=votes.count):
+                        if types[idx] == max(set(votes), key=votes.count):
                             right += 1
                         total += 1
                     print float(right)/float(total)

@@ -137,15 +137,13 @@ class node2vec:
             results = Parallel(n_jobs=num_cores, backend="threading")(delayed(generate_sample)(self.mode,self.sentences_array,self.degree,self.w_size,i) for i in range(1,self.ns))
             for r in results:
                 entrada.append(r) 
-            print "APRENDIENDO"
             self.w2v = word2vec.Word2Vec(entrada, size=self.ndim, window=self.w_size, min_count=1, workers=num_cores,sg=0) 
-
             self.w2v.save(self.path)
             print "TERMINO"   
         else:
             self.w2v = word2vec.Word2Vec.load(self.path)  
         self.get_nodes()
-        self.get_rels([])
+        #self.get_rels([])
         self.delete_props() 
 
     def get_rels(self,traversals):
