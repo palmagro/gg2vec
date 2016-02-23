@@ -28,6 +28,14 @@ class experiment:
         Y = []
         i = 1
         for i in range(a,b+1):
+            if self.param == "ns":
+                k = 3
+            if self.param == "l":
+                k = 3
+            if self.param == "ndim":
+                k = 3
+            if self.param == "k":
+                k = i
             val = i * jump            
             if not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"):
                 t = 0
