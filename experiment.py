@@ -24,8 +24,12 @@ class experiment:
 
     def ntype_prediction(self,a,b,jump):
         pal = pallete("db")
+        # Valores para la grafica de precision en la prediccion
         X = []
         Y = []
+        # Valores para la grafica de desviacion en la prediccion
+        Xd = []
+        Yd = []
         i = 1
         for i in range(a,b+1):
             if self.param == "ns":
@@ -36,8 +40,9 @@ class experiment:
                 k = 3
             if self.param == "k":
                 k = i
-            val = i * jump            
-            if not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"):
+            val = i * jump    
+            resultados = []        
+            if not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p") or not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p") or not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p"):
                 t = 0
                 for it in range(self.iteraciones):
                     if self.param == "ns":
@@ -78,19 +83,34 @@ class experiment:
                         total += 1
                     print float(right)/float(total)
                     t += float(right)/float(total)
+                    resultados.append(float(right)/float(total))
                     n2v.disconnectZODB()
                 result = t / self.iteraciones
-                f = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "w" )
-
-                pickle.dump(result,f)
+                mean_dev = 0
+                for r in resultados:
+                    mean_dev += (r - result) * (r - result)
+                mean_dev = math.sqrt(mean_dev)
+                f1 = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p", "w" )
+                pickle.dump(mean_dev,f1)
+                f2 = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p", "w" )
+                pickle.dump(resultados,f2)
+                f3 = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "w" )
+                pickle.dump(result,f3)
             else:
-                f = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "r" )
-                result = pickle.load(f)
+                f1 = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p", "r" )
+                mean_dev = pickle.load(f1)
+                f2 = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p", "r" )
+                resultados = pickle.load(f2)
+                f3 = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "r" )
+                result = pickle.load(f3)
             X.append(val)
             Y.append(result)
-        self.p.line(X, Y, color=pal[1],legend="ICH",line_width=1.5)
+            Xd.append(val)
+            Yd.append(mean_dev)
+        self.p.line(X, Y, color=pal[1],legend=self.bd,line_width=1.5)
+        self.p.line(Xd, Yd, color=pal[1],legend=self.bd + " dev",line_width=1.5,line_dash='dotted')
         self.p.legend.background_fill_alpha = 0.5
-        return X,Y
+        return X,Y,Xd,Yd
     
     def ntype_conf_matrix(self):
         k = 3
@@ -157,9 +177,13 @@ class experiment:
 
 
     def ltype_prediction(self,a,b,jump):
+        # Valores para la grafica de precision en la prediccion
         pal = pallete("db")
         X = []
         Y = []
+        # Valores para la grafica de desviacion en la prediccion
+        Xd = []
+        Yd = []
         i = 1
         for i in range(a,b+1):
             if self.param == "ns":
@@ -170,8 +194,9 @@ class experiment:
                 k = 3
             if self.param == "k":
                 k = i
-            val = i * jump            
-            if not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"):
+            val = i * jump    
+            resultados = []                
+            if not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p") or not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p") or not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p"):
                 final = 0
                 for it in range(self.iteraciones):
                     if self.param == "ns":
@@ -217,16 +242,32 @@ class experiment:
                         total += 1
                     print float(right)/float(total)
                     final += float(right)/float(total)
+                    resultados.append(float(right)/float(total))
                     n2v.disconnectZODB()
-                result = final / self.iteraciones
-                f = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "w" )
-                pickle.dump(result,f)
+                result = final / self.iteraciones                
+                mean_dev = 0
+                for r in resultados:
+                    mean_dev += (r - result) * (r - result)
+                mean_dev = math.sqrt(mean_dev)
+                f1 = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p", "w" )
+                pickle.dump(mean_dev,f1)
+                f2 = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p", "w" )
+                pickle.dump(resultados,f2)
+                f3 = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "w" )
+                pickle.dump(result,f3)
             else:
-                f = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "r" )
-                result = pickle.load(f)
+                f1 = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p", "r" )
+                mean_dev = pickle.load(f1)
+                f2 = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p", "r" )
+                resultados = pickle.load(f2)
+                f3 = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "r" )
+                result = pickle.load(f3)
             X.append(val)
             Y.append(result)
+            Xd.append(val)
+            Yd.append(mean_dev)
         self.p.line(X, Y, color=pal[1],legend="ICH",line_width=1.5)
+        self.p.line(Xd, Yd, color=pal[1],legend="ICH",line_width=1.5,line_dash='dotted')
         self.p.legend.background_fill_alpha = 0.5
         return X,Y
 
