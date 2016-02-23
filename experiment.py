@@ -28,14 +28,6 @@ class experiment:
         Y = []
         i = 1
         for i in range(a,b+1):
-            if self.param == "ns":
-                k = 3
-            if self.param == "l":
-                k = 3
-            if self.param == "ndim":
-                k = 3
-            if self.param == "k":
-                k = i
             val = i * jump            
             if not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"):
                 t = 0
@@ -51,13 +43,16 @@ class experiment:
                         k = 3
                     if self.param == "k":
                         n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,6,self.mode,[],self.iteraciones)
-                        k = i
+                        k = val
                     n2v.connectZODB()
                     n2v.learn(self.mode,self.trainset_p,False)
                     #k-neighbors for each node
                     total = 0
                     right = 0
                     clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
+                    print len(n2v.nodes_pos)
+                    print len(n2v.nodes_type)
+                    
                     clf.fit(n2v.nodes_pos, n2v.nodes_type)
                     pos = []
                     types = []
@@ -227,7 +222,74 @@ class experiment:
         self.p.legend.background_fill_alpha = 0.5
         return X,Y
 
-
+    def ltype_conf_matrix(self):
+        k = 3
+        if not os.path.exists("models/ltype_conf_matrix" + self.bd +"ts"+str(self.trainset_p)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"):
+            matrices = [None] * self.iteraciones
+            #repetimos para self.iteraciones experimentos
+            for it in range(self.iteraciones):
+                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,6,self.mode,[],self.iteraciones)
+                n2v.connectZODB()
+                n2v.learn(self.mode,self.trainset_p,False)
+                #generamos un diccionario para saber las posiciones de cada tipo de nodo en la matriz
+                dic = dict()
+                for idx,t in enumerate(n2v.r_types):
+                    dic[t] = idx
+                #generamos la matriz para cada experimento
+                matriz = [0] * (len(n2v.r_types)+1)
+                for i in range(0,len(n2v.r_types)+1):
+                    matriz[i] = [0] * (len(n2v.r_types)+1)
+                    for idx,t in enumerate(n2v.r_types):
+                        if i == 0:
+                            matriz[i][idx+1] = t
+                        else:
+                            matriz[i][idx] = 0    
+                for idx,t in enumerate(n2v.r_types):
+                    matriz[idx+1][0] = t
+                #k-neighbors for each node
+                clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
+                link_vectors = []
+                link_types = []
+                for t in n2v.r_types:
+                    for r in n2v.r_types[t]:
+                        link_vectors.append(r["v"])
+                        link_types.append(t)
+                clf.fit(link_vectors, link_types)
+                pos = []
+                types = []
+                for idx,i in enumerate(link_vectors):
+                    if random.random() < self.trainset_p:
+                        pos.append(i)
+                        types.append(link_types[idx])
+                neigh = clf.kneighbors(pos,return_distance = False)
+                for idx,n in enumerate(neigh):
+                    votes = []                    
+                    for idx1,s in enumerate(neigh[idx][1:]):
+                        votes.append(link_types[s])
+                    matriz[dic[types[idx]]+1][dic[max(set(votes), key=votes.count)]+1] +=1
+                n2v.disconnectZODB()
+                print matriz
+                matrices[it] = matriz
+            f = open( "models/ltype_conf_matrix" + self.bd +"ts"+str(self.trainset_p)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "w" )
+            pickle.dump(matrices,f)
+        else:
+            f = open( "models/ltype_conf_matrix" + self.bd +"ts"+str(self.trainset_p)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "r" )
+            matrices = pickle.load(f)
+        #calculando la matriz de confusion promedios de n experimentos
+        matriz_promedio = [None] * (len(matrices[0]))
+        for i in range(0,len(matrices[0])):
+            matriz_promedio[i] = [0] * (len(matrices[0]))
+        for idx,t in enumerate(matrices[0]):
+            matriz_promedio[0][idx] = t[0]
+        for idx,t in enumerate(matrices[0]):
+            matriz_promedio[idx][0] = t[0]
+        for i in range(1,len(matrices[0])):
+            for j in range(1,len(matrices[0])):
+                suma = 0
+                for m in range(self.iteraciones):
+                    suma += matrices[m][i][j]
+                matriz_promedio[i][j] = suma/self.iteraciones
+        return matriz_promedio
 
     def link_prediction(self,traversals,a,b,jump):
         pal = pallete("links")

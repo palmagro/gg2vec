@@ -143,7 +143,7 @@ class node2vec:
         else:
             self.w2v = word2vec.Word2Vec.load(self.path)  
         self.get_nodes()
-        #self.get_rels([])
+        self.get_rels([])
         self.delete_props() 
 
     def get_rels(self,traversals):
@@ -445,3 +445,5 @@ data=dict(
                     self.nodes_type.append(t)
         print len(self.nodes_pos)
         print len(self.nodes_type)
+        self.nodes_pos = list(self.nodes_pos)
+        self.nodes_type = list(self.nodes_type)
