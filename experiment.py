@@ -269,7 +269,7 @@ class experiment:
         self.p.line(X, Y, color=pal[1],legend="ICH",line_width=1.5)
         self.p.line(Xd, Yd, color=pal[1],legend="ICH",line_width=1.5,line_dash='dotted')
         self.p.legend.background_fill_alpha = 0.5
-        return X,Y
+        return X,Y,Xd,Yd
 
     def ltype_conf_matrix(self):
         k = 3
