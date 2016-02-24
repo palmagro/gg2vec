@@ -58,7 +58,7 @@ class experiment:
                         n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,6,self.mode,[],self.iteraciones)
                         k = val
                     n2v.connectZODB()
-                    n2v.learn(self.mode,self.trainset_p,False)
+                    n2v.learn(self.mode,self.trainset_p,False,it)
                     #k-neighbors for each node
                     total = 0
                     right = 0
@@ -210,9 +210,9 @@ class experiment:
                         k = 3
                     if self.param == "k":
                         n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,6,self.mode,[],self.iteraciones)
-                        k = i
+                        k = val
                     n2v.connectZODB()
-                    n2v.learn(self.mode,self.trainset_p,False)
+                    n2v.learn(self.mode,self.trainset_p,False,it)
                     #k-neighbors for each node
                     total = 0
                     right = 0

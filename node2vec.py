@@ -122,16 +122,16 @@ class node2vec:
 
         print "models/" + self.bd +".npy"
         
-    def learn(self,m,ts,d):
+    def learn(self,m,ts,d,it):
         num_cores = multiprocessing.cpu_count()
         print "numCores = " + str(num_cores)
         self.path = "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m
         if d:
             self.path = self.path + "del"+str(ts)
-        self.path = self.path +".npy"
+        self.path = self.path +str(it)+".npy"
         print "Learning:" + self.path
         print "CCCC!"
-        if not os.path.exists(self.path) or self.iteraciones > 1:
+        if not os.path.exists(self.path):
             print "Entra"
             entrada = []
             results = Parallel(n_jobs=num_cores, backend="threading")(delayed(generate_sample)(self.mode,self.sentences_array,self.degree,self.w_size,i) for i in range(1,self.ns))
