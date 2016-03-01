@@ -42,7 +42,7 @@ class experiment:
                 k = i
             val = i * jump    
             resultados = []        
-            if not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p") or not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p") or not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p"):
+            if not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"):# or not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p") or not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p"):
                 t = 0
                 for it in range(self.iteraciones):
                     if self.param == "ns":
@@ -98,18 +98,18 @@ class experiment:
                 f3 = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "w" )
                 pickle.dump(result,f3)
             else:
-                f1 = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p", "r" )
-                mean_dev = pickle.load(f1)
-                f2 = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p", "r" )
-                resultados = pickle.load(f2)
+                #f1 = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p", "r" )
+                #mean_dev = pickle.load(f1)
+                #f2 = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p", "r" )
+                #resultados = pickle.load(f2)
                 f3 = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "r" )
                 result = pickle.load(f3)
             X.append(val)
-            Y.append(result)
+            Y.append(result*100)
             Xd.append(val)
-            Yd.append(mean_dev)
+            Yd.append(0)            #Yd.append(mean_dev)
         self.p.line(X, Y, color=pal[1],legend=self.bd,line_width=1.5)
-        self.p.line(Xd, Yd, color=pal[1],legend=self.bd + " dev",line_width=1.5,line_dash='dotted')
+        #self.p.line(Xd, Yd, color=pal[1],legend=self.bd + " dev",line_width=1.5,line_dash='dotted')
         self.p.legend.background_fill_alpha = 0.5
         return X,Y,Xd,Yd
     
@@ -174,6 +174,13 @@ class experiment:
                 for m in range(self.iteraciones):
                     suma += matrices[m][i][j]
                 matriz_promedio[i][j] = suma/self.iteraciones
+        #calculando porcentajes a partir del promedio de frecuencias
+        for i in range(1,len(matriz_promedio)):
+            suma = 0
+            for j in range(1,len(matriz_promedio)):                
+                suma += matriz_promedio[i][j]
+            for j in range(1,len(matriz_promedio)):                
+                matriz_promedio[i][j] = round(float(matriz_promedio[i][j] * 100) / float(suma),2)
         return matriz_promedio
 
 
@@ -197,7 +204,7 @@ class experiment:
                 k = i
             val = i * jump    
             resultados = []                
-            if not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p") or not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p") or not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p"):
+            if not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"):# or not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p") or not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p"):
                 final = 0
                 for it in range(self.iteraciones):
                     if self.param == "ns":
@@ -260,18 +267,18 @@ class experiment:
                 f3 = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "w" )
                 pickle.dump(result,f3)
             else:
-                f1 = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p", "r" )
-                mean_dev = pickle.load(f1)
-                f2 = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p", "r" )
-                resultados = pickle.load(f2)
+                #f1 = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p", "r" )
+                #mean_dev = pickle.load(f1)
+                #f2 = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p", "r" )
+                #resultados = pickle.load(f2)
                 f3 = open( "models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "r" )
                 result = pickle.load(f3)
             X.append(val)
-            Y.append(result)
-            Xd.append(val)
-            Yd.append(mean_dev)
+            Y.append(result*100)
+            #Xd.append(val)
+            Yd.append(0)#Yd.append(mean_dev)
         self.p.line(X, Y, color=pal[1],legend="ICH",line_width=1.5)
-        self.p.line(Xd, Yd, color=pal[1],legend="ICH",line_width=1.5,line_dash='dotted')
+        #self.p.line(Xd, Yd, color=pal[1],legend="ICH",line_width=1.5,line_dash='dotted')
         self.p.legend.background_fill_alpha = 0.5
         return X,Y,Xd,Yd
 
@@ -342,7 +349,15 @@ class experiment:
                 for m in range(self.iteraciones):
                     suma += matrices[m][i][j]
                 matriz_promedio[i][j] = suma/self.iteraciones
+        #calculando porcentajes a partir del promedio de frecuencias
+        for i in range(1,len(matriz_promedio)):
+            suma = 0
+            for j in range(1,len(matriz_promedio)):                
+                suma += matriz_promedio[i][j]
+            for j in range(1,len(matriz_promedio)):                
+                matriz_promedio[i][j] = round(float(matriz_promedio[i][j] * 100) / float(suma),2)
         return matriz_promedio
+
 
     def link_prediction(self,traversals,a,b,jump):
         pal = pallete("links")
