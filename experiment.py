@@ -62,17 +62,18 @@ class experiment:
                     #k-neighbors for each node
                     total = 0
                     right = 0
-                    clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
-                    print len(n2v.nodes_pos)
-                    print len(n2v.nodes_type)
-                    
-                    clf.fit(n2v.nodes_pos, n2v.nodes_type)
                     pos = []
                     types = []
                     for idx,i in enumerate(n2v.nodes_pos):
                         if random.random() < self.trainset_p:
                             pos.append(i)
                             types.append(n2v.nodes_type[idx])
+                    if len(pos) - 1 < k:
+                        k = len(pos) - 1
+                    clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
+                    print len(n2v.nodes_pos)
+                    print len(n2v.nodes_type)
+                    clf.fit(n2v.nodes_pos, n2v.nodes_type)
                     neigh = clf.kneighbors(pos,return_distance = False)
                     for idx,n in enumerate(neigh):
                         votes = []                    
@@ -216,22 +217,25 @@ class experiment:
                     #k-neighbors for each node
                     total = 0
                     right = 0
-                    clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
+
                     link_vectors = []
                     link_types = []
                     for t in n2v.r_types:
                         for r in n2v.r_types[t]:
                             link_vectors.append(r["v"])
                             link_types.append(t)
-                    print "a entrenar kneighbors"
-                    clf.fit(link_vectors, link_types)
-                    print "entrenado kneighbors"
                     pos = []
                     types = []
                     for idx,i in enumerate(link_vectors):
                         if random.random() < self.trainset_p:
                             pos.append(i)
                             types.append(link_types[idx])
+                    if len(pos) - 1 < k:
+                        k = len(pos) - 1
+                    clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
+                    print "a entrenar kneighbors"
+                    clf.fit(link_vectors, link_types)
+                    print "entrenado kneighbors"
                     neigh = clf.kneighbors(pos,return_distance = False)
                     for idx,n in enumerate(neigh):
                         votes = []                    
