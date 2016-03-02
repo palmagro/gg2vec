@@ -144,7 +144,7 @@ class experiment:
                     if random.random() < self.trainset_p:
                         pos.append(i)
                         types.append(n2v.nodes_type[idx])
-                if len(pos) - 1 > k:
+                if len(pos) - 1 < k:
                     k = len(pos) - 1
                 clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
                 clf.fit(n2v.nodes_pos, n2v.nodes_type)
