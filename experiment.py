@@ -114,14 +114,14 @@ class experiment:
         return X,Y,Xd,Yd
     
     def ntype_conf_matrix(self):
-        k = 3
+        k = 100000
         if not os.path.exists("models/ntype_conf_matrix" + self.bd +"ts"+str(self.trainset_p)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"):
             matrices = [None] * self.iteraciones
             #repetimos para self.iteraciones experimentos
             for it in range(self.iteraciones):
                 n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,6,self.mode,[],self.iteraciones)
                 n2v.connectZODB()
-                n2v.learn(self.mode,self.trainset_p,False)
+                n2v.learn(self.mode,self.trainset_p,False,it)
                 #generamos un diccionario para saber las posiciones de cada tipo de nodo en la matriz
                 dic = dict()
                 for idx,t in enumerate(n2v.n_types):
@@ -138,14 +138,16 @@ class experiment:
                 for idx,t in enumerate(n2v.n_types):
                     matriz[idx+1][0] = t
                 #k-neighbors for each node
-                clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
-                clf.fit(n2v.nodes_pos, n2v.nodes_type)
                 pos = []
                 types = []
                 for idx,i in enumerate(n2v.nodes_pos):
                     if random.random() < self.trainset_p:
                         pos.append(i)
                         types.append(n2v.nodes_type[idx])
+                if len(pos) - 1 > k:
+                    k = len(pos) - 1
+                clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
+                clf.fit(n2v.nodes_pos, n2v.nodes_type)
                 neigh = clf.kneighbors(pos,return_distance = False)
                 for idx,n in enumerate(neigh):
                     votes = []                    
