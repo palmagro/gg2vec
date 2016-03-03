@@ -179,19 +179,15 @@ class node2vec:
         for t in self.r_types:
             vectors = []
             rels = self.r_types[t]
-            #print "------------"+ t+"------------"
-            #print "Number of Relations: "+ str(len(rels))
             for r in rels:      
                 if (r["s"] in self.w2v) and (r["t"] in self.w2v):
                     vectors.append(self.w2v[r["t"]] - self.w2v[r["s"]])
-            #print "Number of Good Relations: "+ str(len(vectors))
             vector_medio = np.mean(vectors,axis=0)
             self.m_vectors[t] = np.mean(vectors,axis=0)
             media = 0
             for v in vectors:      
                 media = media + angle(v,vector_medio) 
             media = media / len(vectors)
-            #print "Mean Angle Deviation:" +  str(media)
             self.r_desv[t] = media
         print "Mean Vector Angles"
         self.angle_matrix= dict()
@@ -202,9 +198,6 @@ class node2vec:
                 if x not in self.angle_matrix:
                     self.angle_matrix [x]= dict()
                 self.angle_matrix[x][t] = angle(self.m_vectors[t],self.m_vectors[x])
-                #if i <> j:
-                    #print t+" vs. "+x
-                    #print angle(self.m_vectors[t],self.m_vectors[x])            
 
     def get_nodes(self):
         if not os.path.exists("models/" + self.bd+"-tnodes.p"):
@@ -213,11 +206,11 @@ class node2vec:
             nodes = dict()
             for node in consulta:
                 if node.name and node.tipos <> []:
-                    tipo = node.tipos[0]
                     name = node.name.replace(" ","_")
-                    if not tipo in nodes:
-                        nodes[tipo] = [] 
-                    nodes[tipo].append(name)
+                    for tipo in node.tipos:
+                        if not tipo in nodes:
+                            nodes[tipo] = [] 
+                        nodes[tipo].append(name)
             self.n_types = nodes
             pickle.dump(nodes,f)
         else:

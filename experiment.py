@@ -1,10 +1,19 @@
 from node2vec import *
-from sklearn import neighbors
+from sklearn import neighbors,metrics
 from credentials import *
 import sys    # sys.setdefaultencoding is cancelled by site.py
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.grid_search import GridSearchCV
+from sklearn.cross_validation import StratifiedKFold
 reload(sys)    # to re-enable sys.setdefaultencoding()
 sys.setdefaultencoding('utf-8')
 import multiprocessing
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.cross_validation import cross_val_score
+from sklearn.neighbors.kde import KernelDensity
+from sklearn.tree import DecisionTreeClassifier
 
 class experiment:
     def __init__(self,bd,port,user,pss,label,mode,param,trainset_p,iteraciones):
@@ -180,15 +189,122 @@ class experiment:
                 suma = 0
                 for m in range(self.iteraciones):
                     suma += matrices[m][i][j]
-                matriz_promedio[i][j] = suma/self.iteraciones
+                matriz_promedio[i][j] = float(suma)/float(self.iteraciones)
         #calculando porcentajes a partir del promedio de frecuencias
         for i in range(1,len(matriz_promedio)):
             suma = 0
             for j in range(1,len(matriz_promedio)):                
                 suma += matriz_promedio[i][j]
             for j in range(1,len(matriz_promedio)):                
-                matriz_promedio[i][j] = round(float(matriz_promedio[i][j] * 100) / float(suma),2)
+                matriz_promedio[i][j] = str(round(float(matriz_promedio[i][j] * 100) / float(suma),2))+"%"
+        #Poniendo negritas
+        for i in range(1,len(matriz_promedio)):
+            matriz_promedio[i][0] =  "\meg{ "+str(matriz_promedio[i][0])+"}"
+            matriz_promedio[0][i] =  "\meg{ "+matriz_promedio[0][i]+"}"
+        for i in range(1,len(matriz_promedio)):
+            matriz_promedio[i][i] =  "\meg{ "+matriz_promedio[i][i]+"}"
+        matriz_promedio[0][0] = ""
         return matriz_promedio
+
+
+    #Por ahora esta preparado para recibir solo dos tipos que se solapan!
+    def nmultitype_conf_matrix(self,tipos,nfolds):
+        cadena = ""
+        for t in tipos:
+            cadena += t
+        if not os.path.exists("models/nmultitype_conf_matrix" + self.bd +"ts"+cadena+"Promedio"+str(nfolds)+".p") or True:
+            #Creamos la matriz de matrices donde guardaremos los resultados parciales
+            matrices = [None] * nfolds * nfolds
+            #Creamos/Recuperamos el modelo Node2Vec
+            n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,10000,20,6,self.mode,[],1)
+            n2v.learn("normal",0,False,0)
+            #Creamos los arrays X e Y, anadiendo
+            X = []
+            Y = []
+            #Creamos un array de comunes que son los nodos que son a la vez de ambos tipos
+            comunes = list()
+            for tipo in tipos:
+                for n in n2v.n_types[tipo]:
+                    if n in n2v.w2v:
+                        X.append(n2v.w2v[n])
+                        if n in n2v.n_types[tipos[0]] and  n in n2v.n_types[tipos[1]]:
+                            comunes.append(n2v.w2v[n])
+                        Y.append(tipo)
+            #Creamos los k folds estratificados    
+            X = np.array(X)
+            Y = np.array(Y)
+            skf = StratifiedKFold(Y, n_folds=nfolds)
+            it = 0
+            kdes = []
+            for train_index, test_index in skf:
+                print "k-fold para kde"
+                X_train, X_test = X[train_index], X[test_index]
+                Y_train, Y_test = Y[train_index], Y[test_index]
+                #Creamos la funcion de densidad de probabilidad de cada tipo
+                for t in tipos:
+                    print "Creando KDE para el tipo "+t
+                    tempX = []
+                    for idx,n in enumerate(Y_train):
+                        if n == t:
+                            tempX.append(X_train[idx])
+                    #Calculating KDE with the train set
+                    #use grid search cross-validation to optimize the bandwidth
+                    #params = {'bandwidth': np.logspace(-1, 1, 10)}
+                    #grid = GridSearchCV(neighbors.KernelDensity(), params)
+                    #grid.fit(tempX)
+                    #print("best bandwidth: {0}".format(grid.best_estimator_.bandwidth))
+                    # use the best estimator to compute the kernel density estimate
+                    #kde = grid.best_estimator_
+                    kde = KernelDensity(kernel='gaussian', bandwidth=0.1)
+                    kde.fit(tempX)
+                    kdes.append(kde)
+                    print "Terminado KDE para el tipo "+t
+                #Dividimos el conjunto de test en tipo1, tipo2 y tipo1+2
+                for idx,x in enumerate(X_test):
+                    total = 0
+                    x = np.array(x)
+                    if any((x == a).all() for a in comunes):
+                        Y_test[idx] = "Actor+Director"
+                #Creamos k-folds estratificados para el arbol de decision
+                skf = StratifiedKFold(Y_test, n_folds=nfolds)
+                for train_index, test_index in skf:
+                    print "k-fold para decission tree"
+                    X_train1, X_test1 = X_test[train_index], X_test[test_index]
+                    Y_train1, Y_test1 = Y_test[train_index], Y_test[test_index]
+                    clf = DecisionTreeClassifier(random_state=0)
+                    clf.fit(X_train1,Y_train1)
+                    Y_pred1 = clf.predict(X_test1)
+                    matriz = metrics.confusion_matrix(Y_test1, Y_pred1)
+                    print metrics.confusion_matrix(Y_test1, Y_pred1)
+                    matrices[it] = matriz
+                    it += 1
+            f = open( "models/nmultitype_conf_matrix" + self.bd +"ts"+cadena+"Promedio"+str(nfolds)+".p", "w" )
+            pickle.dump(matrices,f)
+        else:
+            f = open( "models/nmultitype_conf_matrix" + self.bd +"ts"+cadena+"Promedio"+str(nfolds)+".p", "r" )
+            matrices = pickle.load(f)
+        total = matrices[0]
+        for m in matrices[:1]:
+            total += m
+        matriz_promedio = total / len(matrices)
+        matriz_promedio = matriz_promedio.astype('float')
+        #calculando porcentajes a partir del promedio de frecuencias
+        for i in range(0,len(matriz_promedio)):
+            suma = 0
+            for j in range(0,len(matriz_promedio)): 
+                suma += matriz_promedio[i][j]
+                matriz_promedio[i][j] = float(matriz_promedio[i][j])
+            for j in range(0,len(matriz_promedio)):                
+                if suma > 0:
+                    matriz_promedio[i][j] = round(float(matriz_promedio[i][j] * 100) / float(suma),2)
+                else:
+                    matriz_promedio[i][j] = 0
+        matriz_promedio = matriz_promedio.astype('string')
+        for i in range(0,len(matriz_promedio)):
+            for j in range(0,len(matriz_promedio)):
+                matriz_promedio[i][j] = str(matriz_promedio[i][j])+"%"
+        return matriz_promedio
+
 
 
     def ltype_prediction(self,a,b,jump):
@@ -359,14 +475,21 @@ class experiment:
                 suma = 0
                 for m in range(self.iteraciones):
                     suma += matrices[m][i][j]
-                matriz_promedio[i][j] = suma/self.iteraciones
+                matriz_promedio[i][j] = float(suma)/float(self.iteraciones)
         #calculando porcentajes a partir del promedio de frecuencias
         for i in range(1,len(matriz_promedio)):
             suma = 0
             for j in range(1,len(matriz_promedio)):                
                 suma += matriz_promedio[i][j]
             for j in range(1,len(matriz_promedio)):                
-                matriz_promedio[i][j] = round(float(matriz_promedio[i][j] * 100) / float(suma),2)
+                matriz_promedio[i][j] = str(round(float(matriz_promedio[i][j] * 100) / float(suma),2))+"%"
+        #Poniendo negritas
+        for i in range(1,len(matriz_promedio)):
+            matriz_promedio[i][0] =  "\meg{ "+str(matriz_promedio[i][0])+"}"
+            matriz_promedio[0][i] =  "\meg{ "+matriz_promedio[0][i]+"}"
+        for i in range(1,len(matriz_promedio)):
+            matriz_promedio[i][i] =  "\meg{ "+matriz_promedio[i][i]+"}"
+        matriz_promedio[0][0] = ""
         return matriz_promedio
 
 
