@@ -211,7 +211,7 @@ class experiment:
             #Creamos la matriz de matrices donde guardaremos los resultados parciales
             matrices = [None] * nfolds * nfolds
             #Creamos/Recuperamos el modelo Node2Vec
-            n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,10000,20,6,self.mode,[],1)
+            n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000,20,6,self.mode,[],1)
             n2v.learn("normal",0,False,0)
             #Creamos los arrays X e Y, anadiendo
             X = []
@@ -259,7 +259,7 @@ class experiment:
                     total = 0
                     x = np.array(x)
                     if any((x == a).all() for a in comunes):
-                        Y_test[idx] = "Actor+Director"
+                        Y_test[idx] = tipos[0]+"+"+tipos[1]
                 #Creamos k-folds estratificados para el arbol de decision
                 skf = StratifiedKFold(Y_test, n_folds=nfolds)
                 for train_index, test_index in skf:
@@ -269,8 +269,8 @@ class experiment:
                     clf = DecisionTreeClassifier(random_state=0)
                     clf.fit(X_train1,Y_train1)
                     Y_pred1 = clf.predict(X_test1)
-                    matriz = metrics.confusion_matrix(Y_test1, Y_pred1)
-                    print metrics.confusion_matrix(Y_test1, Y_pred1)
+                    matriz = metrics.confusion_matrix(Y_test1, Y_pred1,[tipos[1],tipos[0]+"+"+tipos[1]])
+                    print matriz
                     matrices[it] = matriz
                     it += 1
             f = open( "models/nmultitype_conf_matrix" + self.bd +"ts"+cadena+"Promedio"+str(nfolds)+".p", "w" )
@@ -280,9 +280,14 @@ class experiment:
             matrices = pickle.load(f)
         total = matrices[0]
         for m in matrices[:1]:
-            total += m
-        matriz_promedio = total / len(matrices)
+            total = [map(sum, zip(*t)) for t in zip(total, m)]
+        total = np.array(total)
+        matriz_promedio = total 
         matriz_promedio = matriz_promedio.astype('float')
+        print matrices
+        print matriz_promedio
+        matriz_promedio = matriz_promedio / len(matrices)
+        print matriz_promedio
         #calculando porcentajes a partir del promedio de frecuencias
         for i in range(0,len(matriz_promedio)):
             suma = 0
