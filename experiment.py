@@ -41,6 +41,7 @@ class experiment:
         Yd = []
         i = 1
         for i in range(a,b+1):
+            val = i * jump  
             if self.param == "ns":
                 k = 3
             if self.param == "l":
@@ -48,9 +49,11 @@ class experiment:
             if self.param == "ndim":
                 k = 3
             if self.param == "k":
-                k = i
+                k = val
             val = i * jump    
-            resultados = []        
+            resultados = []     
+            print "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"
+            print os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p")   
             if not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"):# or not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p") or not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p"):
                 t = 0
                 for it in range(self.iteraciones):
@@ -78,8 +81,10 @@ class experiment:
                             pos.append(i)
                             types.append(n2v.nodes_type[idx])
                     if len(pos) - 1 < k:
-                        k = len(pos) - 1
-                    clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
+                        k1 = len(pos) - 1
+                    else:
+                        k1 = k
+                    clf = neighbors.KNeighborsClassifier(k1+1, "uniform",n_jobs=multiprocessing.cpu_count())
                     print len(n2v.nodes_pos)
                     print len(n2v.nodes_type)
                     clf.fit(n2v.nodes_pos, n2v.nodes_type)
@@ -124,11 +129,11 @@ class experiment:
     
     def ntype_conf_matrix(self):
         k = 100000
-        if not os.path.exists("models/ntype_conf_matrix" + self.bd +"ts"+str(self.trainset_p)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"):
+        if not os.path.exists("models/ntype_conf_matrix" + self.bd +"ts"+str(self.trainset_p)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p") or True:
             matrices = [None] * self.iteraciones
             #repetimos para self.iteraciones experimentos
             for it in range(self.iteraciones):
-                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,6,self.mode,[],self.iteraciones)
+                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,800000,200,6,self.mode,[],self.iteraciones)
                 n2v.connectZODB()
                 n2v.learn(self.mode,self.trainset_p,False,it)
                 #generamos un diccionario para saber las posiciones de cada tipo de nodo en la matriz
@@ -153,9 +158,11 @@ class experiment:
                     if random.random() < self.trainset_p:
                         pos.append(i)
                         types.append(n2v.nodes_type[idx])
-                if len(pos) - 1 > k:
-                    k = len(pos) - 1
-                clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
+                if len(pos) - 1 < k:
+                    k1 = len(pos) - 1
+                else:
+                    k1 = k
+                clf = neighbors.KNeighborsClassifier(k1+1, "uniform",n_jobs=multiprocessing.cpu_count())
                 clf.fit(n2v.nodes_pos, n2v.nodes_type)
                 neigh = clf.kneighbors(pos,return_distance = False)
                 for idx,n in enumerate(neigh):
@@ -361,8 +368,10 @@ class experiment:
                             pos.append(i)
                             types.append(link_types[idx])
                     if len(pos) - 1 < k:
-                        k = len(pos) - 1
-                    clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
+                        k1 = len(pos) - 1
+                    else:
+                        k1 = k
+                    clf = neighbors.KNeighborsClassifier(k1+1, "uniform",n_jobs=multiprocessing.cpu_count())
                     print "a entrenar kneighbors"
                     clf.fit(link_vectors, link_types)
                     print "entrenado kneighbors"
@@ -430,13 +439,17 @@ class experiment:
                 for idx,t in enumerate(n2v.r_types):
                     matriz[idx+1][0] = t
                 #k-neighbors for each node
-                clf = neighbors.KNeighborsClassifier(k+1, "uniform",n_jobs=multiprocessing.cpu_count())
                 link_vectors = []
                 link_types = []
                 for t in n2v.r_types:
                     for r in n2v.r_types[t]:
                         link_vectors.append(r["v"])
                         link_types.append(t)
+                if len(pos) - 1 < k:
+                    k1 = len(pos) - 1
+                else:
+                    k1 = k
+                clf = neighbors.KNeighborsClassifier(k1+1, "uniform",n_jobs=multiprocessing.cpu_count())
                 clf.fit(link_vectors, link_types)
                 pos = []
                 types = []
