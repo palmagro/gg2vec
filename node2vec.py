@@ -83,7 +83,7 @@ class node2vec:
             self.degree = []
             for i in range(1,int(nb)+1):
                 count += 1
-                consulta = "match (n)-[r]-(m) where n."+self.label+" <> '' return n,count(r) as d, n."+self.label+", collect(m."+self.label+") as collect skip "+str(batches*count)+" limit "+str(  batches)
+                consulta = "match (n)-[r]-(m) where n."+self.label+" <> '' return n,count(r) as d, n."+self.label+", collect(m."+self.label+") as collect skip "+str(batches*count)+" limit "+str(batches)
                 cuenta = neo4j.CypherQuery(self.graph_db, consulta).execute()
                 print "\r"+str(float((i / nb)*100))+ "%"
                 for cuenta1 in cuenta:

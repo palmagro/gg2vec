@@ -1,3 +1,4 @@
+import pydot 
 from node2vec import *
 from sklearn import neighbors,metrics
 from credentials import *
@@ -13,7 +14,7 @@ import multiprocessing
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.cross_validation import cross_val_score
 from sklearn.neighbors.kde import KernelDensity
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier, export_graphviz
 
 class experiment:
     def __init__(self,bd,port,user,pss,label,mode,param,trainset_p,iteraciones):
@@ -50,11 +51,10 @@ class experiment:
                 k = 3
             if self.param == "k":
                 k = val
-            val = i * jump    
             resultados = []     
             print "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"
             print os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p")   
-            if not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"):# or not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p") or not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p"):
+            if not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p") or not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p") or not os.path.exists("models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p"):
                 t = 0
                 for it in range(self.iteraciones):
                     if self.param == "ns":
@@ -242,6 +242,7 @@ class experiment:
                 print "k-fold para kde"
                 X_train, X_test = X[train_index], X[test_index]
                 Y_train, Y_test = Y[train_index], Y[test_index]
+                Y_test = Y_test.astype('|S64')
                 #Creamos la funcion de densidad de probabilidad de cada tipo
                 for t in tipos:
                     print "Creando KDE para el tipo "+t
@@ -262,11 +263,14 @@ class experiment:
                     kdes.append(kde)
                     print "Terminado KDE para el tipo "+t
                 #Dividimos el conjunto de test en tipo1, tipo2 y tipo1+2
+                cont = 0
                 for idx,x in enumerate(X_test):
                     total = 0
                     x = np.array(x)
                     if any((x == a).all() for a in comunes):
-                        Y_test[idx] = tipos[0]+"+"+tipos[1]
+                        Y_test[idx] = str(tipos[0]+"+"+tipos[1])
+                        cont += 1
+                print "Numero de elementos con doble tipo:"+str(cont)
                 #Creamos k-folds estratificados para el arbol de decision
                 skf = StratifiedKFold(Y_test, n_folds=nfolds)
                 for train_index, test_index in skf:
@@ -274,11 +278,13 @@ class experiment:
                     X_train1, X_test1 = X_test[train_index], X_test[test_index]
                     Y_train1, Y_test1 = Y_test[train_index], Y_test[test_index]
                     clf = DecisionTreeClassifier(random_state=0)
+                    print X_train1[0]
                     clf.fit(X_train1,Y_train1)
+                    export_graphviz(clf);
                     Y_pred1 = clf.predict(X_test1)
-                    matriz = metrics.confusion_matrix(Y_test1, Y_pred1,[tipos[1],tipos[0]+"+"+tipos[1]])
-                    print matriz
-                    matrices[it] = matriz
+                    matriz = metrics.confusion_matrix(Y_test1, Y_pred1,[tipos[0],tipos[1],tipos[0]+"+"+tipos[1]])
+                    matrices[it] = np.array(matriz)
+                    print matrices[it]
                     it += 1
             f = open( "models/nmultitype_conf_matrix" + self.bd +"ts"+cadena+"Promedio"+str(nfolds)+".p", "w" )
             pickle.dump(matrices,f)
@@ -286,15 +292,15 @@ class experiment:
             f = open( "models/nmultitype_conf_matrix" + self.bd +"ts"+cadena+"Promedio"+str(nfolds)+".p", "r" )
             matrices = pickle.load(f)
         total = matrices[0]
-        for m in matrices[:1]:
-            total = [map(sum, zip(*t)) for t in zip(total, m)]
-        total = np.array(total)
+        for m in matrices[1:]:
+            total += m
+        print total
         matriz_promedio = total 
         matriz_promedio = matriz_promedio.astype('float')
-        print matrices
-        print matriz_promedio
+        #print matrices
+        #print matriz_promedio
         matriz_promedio = matriz_promedio / len(matrices)
-        print matriz_promedio
+        #print matriz_promedio
         #calculando porcentajes a partir del promedio de frecuencias
         for i in range(0,len(matriz_promedio)):
             suma = 0
