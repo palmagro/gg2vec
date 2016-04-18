@@ -120,20 +120,17 @@ data=dict(
 
 def all_figure(n2v,tp,ntypes,legend):
     pal = pallete("nodes") 
-    #mds = manifold.TSNE(n_components=2)
-    mds = manifold.MDS(n_components=2, metric=True, n_init=4, max_iter=300, verbose=0, eps=0.001, n_jobs=1, random_state=None, dissimilarity='euclidean')
     X = []
     Y = []
     C = []
-    for idx,nt in enumerate(n2v.n_types):
+    for idx,nt in enumerate(ntypes):
         for n in n2v.n_types[nt]:
-            if random.random() < tp and nt in ntypes:    
+            if random.random() < tp[idx]:    
                 if n in n2v.w2v:
                     X.append(n2v.w2v[n])
                     Y.append(n)
                     C.append(idx)
-    #print X
-    #print X
+    mds = manifold.MDS(n_components=2, metric=True, n_init=4, max_iter=300, verbose=0, eps=0.001, n_jobs=1, random_state=None, dissimilarity='euclidean')
     result = mds.fit_transform(np.asfarray(X,dtype='float'))
     x = []
     y = []
@@ -147,15 +144,12 @@ def all_figure(n2v,tp,ntypes,legend):
 
     source = ColumnDataSource(data=dict(x=x,y=y, label=label))
     #Nodes Plotting
-    o = figure(title="All Nodes",plot_height=n2v.ploth,plot_width=n2v.plotw)
-    for idx,nt in enumerate(n2v.n_types):
-        if nt in ntypes:   
-            o.line([], [], color=pal[idx],legend=nt,line_width=1.5)
-    #print "d"
-    #print c
+    o = figure(plot_height=n2v.ploth,plot_width=n2v.plotw)
+    for idx,nt in enumerate(ntypes):
+        o.line([], [], color=pal[idx],legend=nt,line_width=1.5)
     if legend:
         o.text('x', 'y', label, source=source, )
-    o.circle('x', 'y', size=10, source=source,color=c )
+    o.circle('x', 'y', size=10, source=source,color=c,alpha=0.5 )
     return o
 
 def all_links_figure(n2v,tp,ltypes,legend):

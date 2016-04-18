@@ -16,6 +16,7 @@ from sklearn.cross_validation import cross_val_score
 from sklearn.neighbors.kde import KernelDensity
 from sklearn.tree import DecisionTreeClassifier, export_graphviz
 
+#el valor de trainset_p sera usado como probabilidad de que un elemento sea evaluado con knn (valor entre 0 y 1 ) o como valor de la cantidad de folds en el cross valdiation para cualquier de los otros metodos.
 class experiment:
     def __init__(self,bd,port,user,pss,label,mode,param,trainset_p,iteraciones):
         self.bd = bd 
@@ -49,7 +50,7 @@ class experiment:
                 k = 3
             if self.param == "ndim":
                 k = 3
-            if self.param == "k":
+            if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
                 k = val
             resultados = []     
             print "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"
@@ -66,40 +67,19 @@ class experiment:
                     if self.param == "ndim":
                         n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,val,6,self.mode,[],self.iteraciones)
                         k = 3
-                    if self.param == "k":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,6,self.mode,[],self.iteraciones)
-                        k = val
+                    #si lo que vamos a estudiar no son los parametros libres de la inmersion, fijamos dichos parametros a sus valores optimos segun BD
+                    if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
                     n2v.connectZODB()
                     n2v.learn(self.mode,self.trainset_p,False,it)
-                    #k-neighbors for each node
-                    total = 0
-                    right = 0
-                    pos = []
-                    types = []
-                    for idx,i in enumerate(n2v.nodes_pos):
-                        if random.random() < self.trainset_p:
-                            pos.append(i)
-                            types.append(n2v.nodes_type[idx])
-                    if len(pos) - 1 < k:
-                        k1 = len(pos) - 1
+                    if self.param == "ns" or self.param == "ndim" or  self.param == "l":
+                        result = predict("k",n2v.nodes_pos,n2v.nodes_type,val,self.trainset_p)
                     else:
-                        k1 = k
-                    clf = neighbors.KNeighborsClassifier(k1+1, "uniform",n_jobs=multiprocessing.cpu_count())
-                    print len(n2v.nodes_pos)
-                    print len(n2v.nodes_type)
-                    clf.fit(n2v.nodes_pos, n2v.nodes_type)
-                    neigh = clf.kneighbors(pos,return_distance = False)
-                    for idx,n in enumerate(neigh):
-                        votes = []                    
-                        for idx1,s in enumerate(neigh[idx][1:]):
-                            votes.append(n2v.nodes_type[s])
-                        if types[idx] == max(set(votes), key=votes.count):
-                            right += 1
-                        total += 1
-                    print float(right)/float(total)
-                    t += float(right)/float(total)
-                    resultados.append(float(right)/float(total))
+                        result = predict(self.param,n2v.nodes_pos,n2v.nodes_type,val,self.trainset_p)
+                    t += result
+                    resultados.append(result)
                     n2v.disconnectZODB()
+                    print result
                 result = t / self.iteraciones
                 mean_dev = 0
                 for r in resultados:
@@ -118,10 +98,19 @@ class experiment:
                 resultados = pickle.load(f2)
                 f3 = open( "models/ntype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "r" )
                 result = pickle.load(f3)
+            #print "RESULT"
+            #print result
+            #print "RESULTADOS"
+            #print resultados
+            #print "MEAN DEV"
+            #print mean_dev
             X.append(val)
             Y.append(result*100)
             Xd.append(val)
             Yd.append(mean_dev)
+        print self.bd
+        print "max accuracy: " + str(max(Y))
+        print "max dev: " + str(max(Yd))
         self.p.line(X, Y, color=pal[1],legend=self.bd,line_width=1.5)
         #self.p.line(Xd, Yd, color=pal[1],legend=self.bd + " dev",line_width=1.5,line_dash='dotted')
         self.p.legend.background_fill_alpha = 0.5
@@ -330,15 +319,15 @@ class experiment:
         Yd = []
         i = 1
         for i in range(a,b+1):
+            val = i * jump    
             if self.param == "ns":
                 k = 3
             if self.param == "l":
                 k = 3
             if self.param == "ndim":
                 k = 3
-            if self.param == "k":
-                k = i
-            val = i * jump    
+            if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
+                k = val
             resultados = []                
             if not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p") or not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p") or not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p"):
                 final = 0
@@ -352,46 +341,26 @@ class experiment:
                     if self.param == "ndim":
                         n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,val,6,self.mode,[],self.iteraciones)
                         k = 3
-                    if self.param == "k":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,6,self.mode,[],self.iteraciones)
-                        k = val
+                    #si lo que vamos a estudiar no son los parametros libres de la inmersion, fijamos dichos parametros a sus valores optimos segun BD
+                    if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
                     n2v.connectZODB()
                     n2v.learn(self.mode,self.trainset_p,False,it)
                     #k-neighbors for each node
                     total = 0
                     right = 0
-
                     link_vectors = []
                     link_types = []
                     for t in n2v.r_types:
                         for r in n2v.r_types[t]:
                             link_vectors.append(r["v"])
                             link_types.append(t)
-                    pos = []
-                    types = []
-                    for idx,i in enumerate(link_vectors):
-                        if random.random() < self.trainset_p:
-                            pos.append(i)
-                            types.append(link_types[idx])
-                    if len(pos) - 1 < k:
-                        k1 = len(pos) - 1
+                    if self.param == "ns" or self.param == "ndim" or  self.param == "l":
+                        result = predict("k",link_vectors,link_types,val,self.trainset_p)
                     else:
-                        k1 = k
-                    clf = neighbors.KNeighborsClassifier(k1+1, "uniform",n_jobs=multiprocessing.cpu_count())
-                    print "a entrenar kneighbors"
-                    clf.fit(link_vectors, link_types)
-                    print "entrenado kneighbors"
-                    neigh = clf.kneighbors(pos,return_distance = False)
-                    for idx,n in enumerate(neigh):
-                        votes = []                    
-                        for idx1,s in enumerate(neigh[idx][1:]):
-                            votes.append(link_types[s])
-                        if types[idx] == max(set(votes), key=votes.count):
-                            right += 1
-                        total += 1
-                    print float(right)/float(total)
-                    final += float(right)/float(total)
-                    resultados.append(float(right)/float(total))
+                        result = predict(self.param,link_vectors,link_types,val,self.trainset_p)
+                    final += result
+                    resultados.append(result)
                     n2v.disconnectZODB()
                 result = final / self.iteraciones                
                 mean_dev = 0
@@ -418,6 +387,9 @@ class experiment:
         self.p.line(X, Y, color=pal[1],legend="ICH",line_width=1.5)
         #self.p.line(Xd, Yd, color=pal[1],legend="ICH",line_width=1.5,line_dash='dotted')
         self.p.legend.background_fill_alpha = 0.5
+        print self.bd
+        print "max accuracy: " + str(max(Y))
+        print "max dev: " + str(max(Yd))
         return X,Y,Xd,Yd
 
     def ltype_conf_matrix(self):

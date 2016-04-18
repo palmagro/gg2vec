@@ -119,7 +119,6 @@ class node2vec:
             self.degree = np.load("models/" + self.bd +"l-degree.npy")
         for s in self.sentences_array:
             self.sentences[s[0]]=s[1:]
-
         print "models/" + self.bd +".npy"
         
     def learn(self,m,ts,d,it):
