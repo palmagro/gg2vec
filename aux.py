@@ -113,7 +113,7 @@ def predict(model, pos, types, val,ts):
         return scores.mean()
     if model == "ANN":
         #C Support Vector Clasification
-        clf = Classifier(layers=[Layer("Sigmoid", units=100),Layer("Softmax")],learning_rate=0.001,n_iter=val)
+        clf = Classifier(layers=[Layer("Sigmoid", units=val),Layer("Softmax")])
         skf = StratifiedKFold(types, n_folds=ts)
         it = 0
         kdes = []
