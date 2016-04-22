@@ -126,14 +126,19 @@ class node2vec:
         print "numCores = " + str(num_cores)
         self.path = "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m
         if d:
-            self.path = self.path + "del"+str(ts)
+
+            #el metodo delete_rels elimina las relaciones por las que despues preguntaremos de self.sentences_array antes de entrenar y devuelve el nuevo dump con las relaciones quitadas y una lista de las relaciones quitadas
+            self.learn(m,0,False,it)
+            self.get_rels([])
+            sentences_del,self.r_deleted = delete_rels(self.sentences_array,self.r_types,ts)
+            self.path = self.path + "del"+str(ts)+"-"
         self.path = self.path +str(it)+".npy"
         print "Learning:" + self.path
         print "CCCC!"
         if not os.path.exists(self.path):
             print "Entra"
             entrada = []
-            results = Parallel(n_jobs=num_cores, backend="threading")(delayed(generate_sample)(self.mode,self.sentences_array,self.degree,self.w_size,i) for i in range(1,self.ns))
+            results = Parallel(n_jobs=num_cores, backend="threading")(delayed(generate_sample)(self.mode,sentences_del,self.degree,self.w_size,i) for i in range(1,self.ns))
             for r in results:
                 entrada.append(r) 
             self.w2v = word2vec.Word2Vec(entrada, size=self.ndim, window=self.w_size, min_count=1, workers=num_cores,sg=0) 
@@ -148,10 +153,10 @@ class node2vec:
     def get_rels(self,traversals):
         if not os.path.exists("models/" + self.bd+"-trels.p"):
             f = open( "models/" + self.bd+"-trels.p", "w" )
-            consulta = neo4j.CypherQuery(self.graph_db, "match (n)-[r]->(m) return n."+self.label+" as s,m."+self.label+" as t ,r,type(r) as tipo").execute()
+            consulta = neo4j.CypherQuery(self.graph_db, "match (n)-[r]->(m) return n."+self.label+" as s,m."+self.label+" as t ,r,type(r) as tipo,labels(m) as tipot").execute()
             todas = []
             for c in consulta:
-                todas.append([c.s,c.tipo,c.t])
+                todas.append([c.s,c.tipo,c.t,c.tipot])
             pickle.dump(todas,f)
         else:
             f = open( "models/" + self.bd+"-trels.p", "r" )
@@ -163,6 +168,7 @@ class node2vec:
                 link["tipo"] = l[1]
                 link["s"] = l[0].replace(" ","_")
                 link["t"] = l[2].replace(" ","_")
+                link["tipot"] = l[3][0].replace(" ","_")
                 if link["s"] in self.w2v and link["t"] in self.w2v:
                     link["v"] = self.w2v[link["t"]] - self.w2v[link["s"]]
                     if not link["tipo"] in links:
@@ -261,15 +267,21 @@ class node2vec:
         self.n_analysis()
         self.r_analysis()
 
-    def similares(self,nodo,positives,negatives,tipo,label):
-        my_list = self.w2v.most_similar(positives,negatives,topn=500)
+    def similares(self,nodo,positives,negatives,top_n,filtrado):
+        #Version nueva: utilizo las estructuras nodes_pos y nodes_type en un knn de scikit
+        clf = neighbors.KNeighborsClassifier(top_n, "uniform",n_jobs=multiprocessing.cpu_count())
+        clf.fit(self.nodes_pos, self.nodes_type)
+        my_list = clf.kneighbors(positives[0],top_n,False)
+
+        #Version antigua: usaba word2ec por lo que estaba trabajando con todas las propiedades
+        my_list = self.w2v.most_similar(positives,negatives,topn=top_n)
         result = []
         for m in my_list:
-            if m[0] in self.n_types[tipo] and m[0] != nodo:
+            if m[0] != nodo:
                 result.append(m)
         return result
 
-    def predice(self,nodo,label,tipo,rel,fast):
+    def predice(self,nodo,rel,fast,top_n,filtrado):
         if not fast:
             votos = []
             for r in self.r_types[rel]:            
@@ -284,12 +296,11 @@ class node2vec:
                     prop2 = prop2.replace(" ","_")
                     other = other.replace(" ","_")
                     if other in self.w2v and prop2 in self.w2v:
-                        prop1 = self.similares([nodo,other],[prop2],tipo,label)[0][0]
+                        prop1 = self.similares([nodo,other],[prop2])[0][0]
                         votos.append(prop1)
             return max(set(votos), key=votos.count)
         if fast:
-            print "similares"
-            sim = self.similares(nodo,[self.w2v[nodo]+self.m_vectors[rel]],[],tipo,label)   
+            sim = self.similares(nodo,[self.w2v[nodo]+self.m_vectors[str(rel)]],[],top_n,filtrado)   
             f = []
             for s in sim:                             
                 f.append(s[0])
@@ -384,27 +395,8 @@ data=dict(
         for t in self.n_types:
             if n in self.n_types[t]:
                 return t
-    def delete_rels(self,trainset_p):
-        if not os.path.exists("models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+self.mode+"del"+str(trainset_p)+".npy"):
-            print "deleting relations..."
-            #print self.r_types
-            for rt in self.r_types:
-                for r in self.r_types[rt]:
-                    #print random.random() < trainset_p
-                    if random.random() < trainset_p:
-                        #print "entra!"
-                        for s in self.sentences_array:
-                            if s[0] == r["s"] and r["t"] in s:
-                                s.remove(r["t"])
-                            if s[0] == r["t"] and r["s"] in s:
-                                s.remove(r["s"])
-                        if not rt in self.r_deleted:
-                            self.r_deleted[rt] = []
-                        self.r_deleted[rt].append(r)
-        else:
-            for rt in self.r_types:
-                if not rt in self.r_deleted:
-                    self.r_deleted[rt] = []
+
+
     def connectZODB(self):
         print "connnecting"
         if not os.path.exists(self.bd+'.fs'):
@@ -430,11 +422,13 @@ data=dict(
     def delete_props(self):
         self.nodes_pos = []
         self.nodes_type = []
+        self.nodes_name = []
         for t in self.n_types:
             for n in self.n_types[t]:
                 if n in self.w2v:
                     self.nodes_pos.append(self.w2v[n])
                     self.nodes_type.append(t)
+                    self.nodes_name.append(n)
         print len(self.nodes_pos)
         print len(self.nodes_type)
         self.nodes_pos = list(self.nodes_pos)

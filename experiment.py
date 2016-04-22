@@ -480,95 +480,120 @@ class experiment:
         return matriz_promedio
 
 
-    def link_prediction(self,traversals,a,b,jump):
-        pal = pallete("links")
-        self.ratiosf = {}
-        self.n_desv = {}
-        self.r_desv = {}
-        for i in range(a,b):
-
+    def link_prediction(self,traversals,a,b,jump,metrica,filtrado):
+        # Valores para la grafica de precision en la prediccion
+        pal = pallete("db")
+        X = []
+        Y = []
+        # Valores para la grafica de desviacion en la prediccion
+        Xd = []
+        Yd = []
+        i = 1
+        for i in range(a,b+1):
+            val = i * jump    
             if self.param == "ns":
                 k = 3
             if self.param == "l":
                 k = 3
             if self.param == "ndim":
                 k = 3
-            if self.param == "k":
-                k = i
-            if self.param == "ns":
-                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,i*jump,200,6,self.mode,traversals)
-            if self.param == "l":
-                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,250000,200,i*jump,self.mode,traversals)
-            if self.param == "ndim":
-                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,250000,i*jump,6,self.mode,traversals)
-            n2v.connectZODB()
-            if "lp" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k) not in n2v.root:
-                print "entrando"
-                n2v.learn(self.mode,self.trainset_p,False)
-                n2v.delete_rels(self.trainset_p)
-                n2v.learn(self.mode,self.trainset_p,True)
-                n2v.n_analysis()
-                n2v.r_analysis()
+            if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
+                k = val
+            resultados = []   
+            if not os.path.exists("models/l_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p") or not os.path.exists("models/l_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p") or not os.path.exists("models/l_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p"):
+                final = 0
+                for it in range(self.iteraciones):
+                    if self.param == "ns":
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,val,200,6,self.mode,[],self.iteraciones)
+                        k = 3
+                    if self.param == "l":
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,val,self.mode,[],self.iteraciones)
+                        k = 3
+                    if self.param == "ndim":
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,val,6,self.mode,[],self.iteraciones)
+                        k = 3
+                    #si lo que vamos a estudiar no son los parametros libres de la inmersion, fijamos dichos parametros a sus valores optimos segun BD
+                    if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
+                    n2v.learn(self.mode,self.trainset_p,True,it)
+                    total = 0
+                    parcial = 0
+                    n2v.r_analysis()
+                    if metrica == "MRR":
+                        clasificadores = {}
+                        temp_pos = {}
+                        temp_name = {}
+                        ks = {}
+                        for rt in n2v.r_deleted:
+                            temp_pos[rt] = []
+                            temp_name[rt] = []
+                            for idx,e in enumerate(n2v.nodes_type):
+                                if e == n2v.r_deleted[rt][0]["tipot"]:
+                                    temp_pos[rt].append(n2v.nodes_pos[idx])
+                                    temp_name[rt].append(n2v.nodes_name[idx])
+                            if len(temp_pos[rt]) < 1000:
+                                ks[rt] = len(temp_pos[rt])
+                            else:
+                                ks[rt] = 1000                                
+                            clasificadores[rt] = neighbors.KNeighborsClassifier(ks[rt], "uniform",n_jobs=multiprocessing.cpu_count())
+                            clasificadores[rt].fit(temp_pos[rt], temp_name[rt])
+                        print "A continuacion las aristas eliminadas"
+                        for rt in n2v.r_deleted:
+                            for d in n2v.r_deleted[rt]:
+                                rs = d["s"]
+                                rel = d["tipo"]
+                                tipot = d["tipot"]
+                                if rs in n2v.w2v and not '"' in rs:
+                                    total = total + 1
+                                    nbs = clasificadores[rt].kneighbors(n2v.w2v[rs]+n2v.m_vectors[str(rel)],ks[rt],False)[0]
+                                    nbs1 = []
+                                    for idx,e in enumerate(nbs):
+                                        nbs1.append(temp_name[rt][e])
+                                    if d["t"] in nbs1:
+                                        print "ESTA EN LA LISTA DEVUELTA"
+                                        print d["t"]
+                                        print nbs1.index(d["t"])
+                                        parcial += float(1 / float(nbs1.index(d["t"])+1 ))
+                                        print "PUNTUACION"
+                                        print float(1 / float(nbs1.index(d["t"])+1 ))
 
-                n2v.root["lp" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)] = PersistentDict()
-                n2v.root["lp" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)]["ratiosf"] = PersistentDict()
-                n2v.root["lp" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)]["r_desv"] = PersistentDict()
-                n2v.root["lp" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)]["n_desv"] = PersistentDict()
-                total = 0
-                suma = 0
-                for r in n2v.r_deleted:
-                    print r
-                    if r[0] == '-':
-                        con = neo4j.CypherQuery(n2v.graph_db, "MATCH (a)"+r+"(b) WHERE labels(a) <> [] AND labels(b) <> [] RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That LIMIT 5").execute()
-                    else:
-                        con = neo4j.CypherQuery(n2v.graph_db, "MATCH (a)-[r:"+r+"]->(b) WHERE labels(a) <> [] AND labels(b) <> [] RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That LIMIT 5").execute()
-                    if not r in self.ratiosf:
-                        self.ratiosf[r] = []
-                    aciertos = n2v.aciertos_rel(r,self.label,True,str(i*jump)+self.param+str(self.trainset_p))
-                    self.ratiosf[r].append(aciertos)
-                    n2v.root["lp" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)]["ratiosf"][r] = aciertos
-                    if not r in self.r_desv:
-                        self.r_desv[r] = []
-                    self.r_desv[r].append(n2v.r_desv[r])
-                    n2v.root["lp" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)]["r_desv"][r] = n2v.r_desv[r]
-                    if not r in self.n_desv:
-                        self.n_desv[r] = []
-                    print "MATCH (a)-[r:"+r+"]->(b) WHERE labels(a) <> [] AND labels(b) <> [] RETURN DISTINCT head(labels(a)) AS This, type(r) as To, head(labels(b)) AS That LIMIT 5"
-                    self.n_desv[r].append(n2v.n_types_d[con[0]["That"]])
-                    n2v.root["lp" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)]["n_desv"][r]  = n2v.n_types_d[con[0]["That"]]
-                    ndesv = []
+                        if total > 0:
+                            resultIN = float(parcial)/float(total)
+                        else:
+                            resultIN = 0
+                        print "RESULTADO PARCIAL"
+                        print resultIN
+                    final += resultIN
+                    resultados.append(resultIN)
+                result = final / self.iteraciones                
+                mean_dev = 0
+                for r in resultados:
+                    mean_dev += (r - result) * (r - result)
+                mean_dev = math.sqrt(mean_dev)
+                print "RESULTADOS DE UN PUNTO"
+                print resultados
+                print mean_dev
+                f1 = open( "models/l_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p", "w" )
+                pickle.dump(mean_dev,f1)
+                f2 = open( "models/l_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p", "w" )
+                pickle.dump(resultados,f2)
+                f3 = open( "models/l_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p", "w" )
+                pickle.dump(result,f3)
             else:
-                for r in n2v.root["lp" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)]["ratiosf"]:
-                    if not r in self.ratiosf:
-                        self.ratiosf[r] = []
-                    self.ratiosf[r].append(n2v.root["lp" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)]["ratiosf"][r])    
-                    if not r in self.r_desv:
-                        self.r_desv[r] = []
-                    self.r_desv[r].append(n2v.root["lp" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)]["r_desv"][r])  
-                    if not r in self.n_desv:
-                        self.n_desv[r] = []  
-                    self.n_desv[r].append(n2v.root["lp" + self.bd +"ts"+str(self.trainset_p)+self.param+str(i*jump)+"k"+str(k)]["n_desv"][r])    
-            n2v.disconnectZODB()
-        print self.ratiosf
-        print self.r_desv
-        print self.n_desv
-        
-        for j,r in enumerate(self.ratiosf):
-            if r <> "HERRAMIENTA" and r <>  "PARROQUIA_LOC" and r <> "CANTON_LOC" and r <> "DSUBAMBITO_PERTENECE": 
-                x = []
-                ratios = []
-                rdesv = []
-                ndesv = []
-                for i,ratio in enumerate(self.ratiosf[r]):
-                    print "ja"
-                    x.append(i*jump)
-                    ratios.append(ratio)
-                    rdesv.append(self.r_desv[r][i])
-                    ndesv.append(self.n_desv[r][i])
-                print ratios
-                print x
-                self.p.line(x, ratios, color=pal[j],legend=r+"(LPR)",line_width=1.5)
-                self.p.line(x, rdesv, color=pal[j],legend=r+"(L-DESV)",line_dash='dashed')
-                self.p.line(x, ndesv, color=pal[j],legend=r+"(N-DESV)",line_dash='dotted')
-                self.p.legend.background_fill_alpha = 0.5
-
+                f1 = open( "models/l_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p", "r" )
+                mean_dev = pickle.load(f1)
+                f2 = open( "models/l_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p", "r" )
+                resultados = pickle.load(f2)
+                f3 = open( "models/l_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p", "r" )
+                result = pickle.load(f3)
+            X.append(val)
+            Y.append(result*100)
+            Xd.append(val)
+            Yd.append(mean_dev)
+        self.p.line(X, Y, color=pal[1],legend="ICH",line_width=1.5)
+        #self.p.line(Xd, Yd, color=pal[1],legend="ICH",line_width=1.5,line_dash='dotted')
+        self.p.legend.background_fill_alpha = 0.5
+        print self.bd
+        print "max accuracy: " + str(max(Y))
+        print "max dev: " + str(max(Yd))
+        return X,Y,Xd,Yd

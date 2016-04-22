@@ -31,4 +31,14 @@ class composite_experiment:
             self.p.line(x, y, color=pal[idx],legend=d[2],line_width=2.0)
             if(dev):
                 self.p.line(xd, yd, color=pal[idx],legend=d[2] + "dev",line_width=2.0,line_dash='dotted')
+            self.p.legend.background_fill_alpha = 0.5    
+
+    def link_prediction(self,traversals,a,b,jump,dev,metrica,filtrado):
+        pal = pallete("db")
+        for idx,d in enumerate(self.ds):
+            e = experiment(d[0],7474,user,pswd,d[1],"normal",self.param,self.trainset_p,self.iteraciones)
+            x,y,xd,yd = e.link_prediction(traversals,a,b,jump,metrica,filtrado)
+            self.p.line(x, y, color=pal[idx],legend=d[2],line_width=2.0)
+            if(dev):
+                self.p.line(xd, yd, color=pal[idx],legend=d[2] + "dev",line_width=2.0,line_dash='dotted')
             self.p.legend.background_fill_alpha = 0.5        

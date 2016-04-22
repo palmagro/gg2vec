@@ -138,4 +138,21 @@ def predict(model, pos, types, val,ts):
             it += 1   
         scores = np.array(scores)
         return scores.mean()
-
+def delete_rels(sentences_array,r_types,trainset_p):
+    print "deleting relations..."
+    r_deleted = {}
+    #print self.r_types
+    for rt in r_types:
+        for r in r_types[rt]:
+            #print random.random() < trainset_p
+            if random.random() < trainset_p:
+                #print "entra!"
+                for s in sentences_array:
+                    if s[0] == r["s"] and r["t"] in s:
+                        s.remove(r["t"])
+                    if s[0] == r["t"] and r["s"] in s:
+                        s.remove(r["s"])
+                if not rt in r_deleted:
+                    r_deleted[rt] = []
+                r_deleted[rt].append(r)
+    return sentences_array, r_deleted

@@ -158,27 +158,19 @@ def all_links_figure(n2v,tp,ltypes,legend):
     #mds = manifold.TSNE(n_components=2)
     mds = manifold.MDS(n_components=2, metric=True, n_init=4, max_iter=300, verbose=0, eps=0.001, n_jobs=1, random_state=None, dissimilarity='euclidean')
     X = []
-    Y = []
     C = []
-    A = []
-    for idx,rt in enumerate(n2v.r_types):
-        for r in n2v.r_types[rt]:
-            if random.random() < tp and rt in ltypes:    
-                X.append(r["v"])
-                Y.append(r["t"])
+    for idx,nt in enumerate(ltypes):
+        for a in n2v.r_types[nt]:
+            if random.random() < tp[idx]:    
+                X.append(a["v"])
                 C.append(idx)
-                A.append(rt == "GENRE")
+
     result = mds.fit_transform(np.asfarray(X,dtype='float'))
     x = []
     y = []
     c = []
     label = []
-    for idx,v in enumerate(Y):
-        if v not in showed and A[idx]:
-            label.append(v)
-            showed.append(v)
-        else:
-            label.append("")            
+    for idx,v in enumerate(result):
         x.append(result[idx][0])
         y.append(result[idx][1])
         c.append(pal[C[idx]])
