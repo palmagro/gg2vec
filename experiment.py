@@ -520,49 +520,69 @@ class experiment:
                     parcial = 0
                     n2v.r_analysis()
                     if metrica == "MRR":
-                        clasificadores = {}
-                        temp_pos = {}
-                        temp_name = {}
-                        ks = {}
-                        for rt in n2v.r_deleted:
-                            temp_pos[rt] = []
-                            temp_name[rt] = []
-                            for idx,e in enumerate(n2v.nodes_type):
-                                if e == n2v.r_deleted[rt][0]["tipot"]:
-                                    temp_pos[rt].append(n2v.nodes_pos[idx])
-                                    temp_name[rt].append(n2v.nodes_name[idx])
-                            if len(temp_pos[rt]) < 1000:
-                                ks[rt] = len(temp_pos[rt])
-                            else:
-                                ks[rt] = 1000                                
-                            clasificadores[rt] = neighbors.KNeighborsClassifier(ks[rt], "uniform",n_jobs=multiprocessing.cpu_count())
-                            clasificadores[rt].fit(temp_pos[rt], temp_name[rt])
-                        print "A continuacion las aristas eliminadas"
-                        for rt in n2v.r_deleted:
-                            for d in n2v.r_deleted[rt]:
-                                rs = d["s"]
-                                rel = d["tipo"]
-                                tipot = d["tipot"]
-                                if rs in n2v.w2v and not '"' in rs:
-                                    total = total + 1
-                                    nbs = clasificadores[rt].kneighbors(n2v.w2v[rs]+n2v.m_vectors[str(rel)],ks[rt],False)[0]
-                                    nbs1 = []
-                                    for idx,e in enumerate(nbs):
-                                        nbs1.append(temp_name[rt][e])
-                                    if d["t"] in nbs1:
-                                        print "ESTA EN LA LISTA DEVUELTA"
-                                        print d["t"]
-                                        print nbs1.index(d["t"])
-                                        parcial += float(1 / float(nbs1.index(d["t"])+1 ))
-                                        print "PUNTUACION"
-                                        print float(1 / float(nbs1.index(d["t"])+1 ))
-
+                        if filtrado:
+                            clasificadores = {}
+                            temp_pos = {}
+                            temp_name = {}
+                            ks = {}
+                            for rt in n2v.r_deleted:
+                                temp_pos[rt] = []
+                                temp_name[rt] = []
+                                for idx,e in enumerate(n2v.nodes_type):
+                                    if e == n2v.r_deleted[rt][0]["tipot"]:
+                                        temp_pos[rt].append(n2v.nodes_pos[idx])
+                                        temp_name[rt].append(n2v.nodes_name[idx])
+                                if len(temp_pos[rt]) < 1000:
+                                    ks[rt] = len(temp_pos[rt])
+                                else:
+                                    ks[rt] = 1000                                
+                                clasificadores[rt] = neighbors.KNeighborsClassifier(ks[rt], "uniform",n_jobs=multiprocessing.cpu_count())
+                                clasificadores[rt].fit(temp_pos[rt], temp_name[rt])
+                            print "A continuacion las aristas eliminadas"
+                            for rt in n2v.r_deleted:
+                                for d in n2v.r_deleted[rt]:
+                                    rs = d["s"]
+                                    rel = d["tipo"]
+                                    tipot = d["tipot"]
+                                    if rs in n2v.w2v and not '"' in rs:
+                                        total = total + 1
+                                        nbs = clasificadores[rt].kneighbors(n2v.w2v[rs]+n2v.m_vectors[str(rel)],ks[rt],False)[0]
+                                        nbs1 = []
+                                        for idx,e in enumerate(nbs):
+                                            nbs1.append(temp_name[rt][e])
+                                        if d["t"] in nbs1:
+                                            print "ESTA EN LA LISTA DEVUELTA"
+                                            print d["t"]
+                                            print nbs1.index(d["t"])
+                                            parcial += float(1 / float(nbs1.index(d["t"])+1 ))
+                                            print "PUNTUACION"
+                                            print float(1 / float(nbs1.index(d["t"])+1 ))
+                        else:
+                            clf = neighbors.KNeighborsClassifier(1000, "uniform",n_jobs=multiprocessing.cpu_count())
+                            clf.fit(n2v.nodes_pos, n2v.nodes_name)
+                            print "A continuacion las aristas eliminadas"
+                            for rt in n2v.r_deleted:
+                                for d in n2v.r_deleted[rt]:
+                                    rs = d["s"]
+                                    rel = d["tipo"]
+                                    tipot = d["tipot"]
+                                    if rs in n2v.w2v and not '"' in rs:
+                                        total = total + 1
+                                        nbs = clf.kneighbors(n2v.w2v[rs]+n2v.m_vectors[str(rel)],1000,False)[0]
+                                        nbs1 = []
+                                        for idx,e in enumerate(nbs):
+                                            nbs1.append(n2v.nodes_name[e])
+                                        if d["t"] in nbs1:
+                                            print "ESTA EN LA LISTA DEVUELTA"
+                                            print d["t"]
+                                            print nbs1.index(d["t"])
+                                            parcial += float(1 / float(nbs1.index(d["t"])+1 ))
+                                            print "PUNTUACION"
+                                            print float(1 / float(nbs1.index(d["t"])+1 ))
                         if total > 0:
                             resultIN = float(parcial)/float(total)
                         else:
                             resultIN = 0
-                        print "RESULTADO PARCIAL"
-                        print resultIN
                     final += resultIN
                     resultados.append(resultIN)
                 result = final / self.iteraciones                
