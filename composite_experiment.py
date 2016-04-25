@@ -44,7 +44,7 @@ class composite_experiment:
             self.p.legend.background_fill_alpha = 0.5        
 
     def traversal_prediction(self,traversals,a,b,jump,dev,metrica,filtrado):
-        pal = pallete("db")
+        pal = pallete("traversals")
         for idx,t in enumerate(traversals):
             e = experiment(self.ds[0],7474,user,pswd,self.ds[1],"normal",self.param,self.trainset_p,self.iteraciones)
             x,y,xd,yd = e.traversal_prediction(t,a,b,jump,metrica,filtrado)

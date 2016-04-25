@@ -54,7 +54,10 @@ def pallete(t):
         if t == "desv":
             return cycle_colors(test,palette=colormapa2)
         else:
-            return cycle_colors(test,palette=colormapa)  
+            if t == "traversals":
+                return cycle_colors(test,palette=colormap)  
+            else:
+                return cycle_colors(test,palette=colormapa)  
 
 def links_figure(n2v):
     pal = pallete("links") 
