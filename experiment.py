@@ -70,7 +70,6 @@ class experiment:
                     #si lo que vamos a estudiar no son los parametros libres de la inmersion, fijamos dichos parametros a sus valores optimos segun BD
                     if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
                         n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
-                    n2v.connectZODB()
                     n2v.learn(self.mode,self.trainset_p,False,it)
                     if self.param == "ns" or self.param == "ndim" or  self.param == "l":
                         result = predict("k",n2v.nodes_pos,n2v.nodes_type,val,self.trainset_p)
@@ -78,7 +77,6 @@ class experiment:
                         result = predict(self.param,n2v.nodes_pos,n2v.nodes_type,val,self.trainset_p)
                     t += result
                     resultados.append(result)
-                    n2v.disconnectZODB()
                     print result
                 result = t / self.iteraciones
                 mean_dev = 0
@@ -123,7 +121,6 @@ class experiment:
             #repetimos para self.iteraciones experimentos
             for it in range(self.iteraciones):
                 n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,800000,200,6,self.mode,[],self.iteraciones)
-                n2v.connectZODB()
                 n2v.learn(self.mode,self.trainset_p,False,it)
                 #generamos un diccionario para saber las posiciones de cada tipo de nodo en la matriz
                 dic = dict()
@@ -159,7 +156,6 @@ class experiment:
                     for idx1,s in enumerate(neigh[idx][1:]):
                         votes.append(n2v.nodes_type[s])
                     matriz[dic[types[idx]]+1][dic[max(set(votes), key=votes.count)]+1] +=1
-                n2v.disconnectZODB()
                 print matriz
                 matrices[it] = matriz
             f = open( "models/ntype_conf_matrix" + self.bd +"ts"+str(self.trainset_p)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "w" )
@@ -344,7 +340,6 @@ class experiment:
                     #si lo que vamos a estudiar no son los parametros libres de la inmersion, fijamos dichos parametros a sus valores optimos segun BD
                     if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
                         n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
-                    n2v.connectZODB()
                     n2v.learn(self.mode,self.trainset_p,False,it)
                     #k-neighbors for each node
                     total = 0
@@ -361,7 +356,6 @@ class experiment:
                         result = predict(self.param,link_vectors,link_types,val,self.trainset_p)
                     final += result
                     resultados.append(result)
-                    n2v.disconnectZODB()
                 result = final / self.iteraciones                
                 mean_dev = 0
                 for r in resultados:
@@ -399,7 +393,6 @@ class experiment:
             #repetimos para self.iteraciones experimentos
             for it in range(self.iteraciones):
                 n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,6,self.mode,[],self.iteraciones)
-                n2v.connectZODB()
                 n2v.learn(self.mode,self.trainset_p,False)
                 #generamos un diccionario para saber las posiciones de cada tipo de nodo en la matriz
                 dic = dict()
@@ -441,7 +434,6 @@ class experiment:
                     for idx1,s in enumerate(neigh[idx][1:]):
                         votes.append(link_types[s])
                     matriz[dic[types[idx]]+1][dic[max(set(votes), key=votes.count)]+1] +=1
-                n2v.disconnectZODB()
                 print matriz
                 matrices[it] = matriz
             f = open( "models/ltype_conf_matrix" + self.bd +"ts"+str(self.trainset_p)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p", "w" )
