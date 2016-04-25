@@ -433,3 +433,39 @@ data=dict(
         print len(self.nodes_type)
         self.nodes_pos = list(self.nodes_pos)
         self.nodes_type = list(self.nodes_type)
+
+#Obtenemos el vector medio del traversal solicitado. 
+    def get_vtraversal(self,traversal):
+        traversals = self.get_traversals(traversal,1)
+        total = 0
+        suma = "INICIO"
+        for t in traversals:
+            if t["t"] in self.w2v and t["s"] in self.w2v:
+                total += 1
+                vector = self.w2v[t["t"]] - self.w2v[t["s"]]
+                if suma == "INICIO":        
+                    suma = vector
+                else:
+                    suma += vector
+        return suma / total
+
+#Obtenemos una serie de traversals aleatorios del tipo indicado (tantos como indique 0<ts<1) 
+    def get_traversals(self,traversal,ts):
+        if not os.path.exists("models/" + self.bd+"-trav-" + traversal + ".p"):
+            f = open( "models/" + self.bd+"-trav-" + traversal + ".p", "w" )
+            consulta = neo4j.CypherQuery(self.graph_db, "match (n)"+traversal+"(m) return n."+self.label+" as s,m."+self.label+" as t ,labels(m) as tipot").execute()
+            todas = []
+            for c in consulta:
+                todas.append({"s":c.s,"t":c.t,"tipot":c.tipot[0]})
+            pickle.dump(todas,f)
+        else:
+            f = open( "models/" + self.bd+"-trav-" + traversal + ".p", "r" )
+            todas = pickle.load(f)
+        finales = []
+        for t in todas:
+            if random.random() < ts:
+                t["s"] = t["s"].replace(" ","_")
+                t["t"] = t["t"].replace(" ","_")
+                t["tipot"] = t["tipot"].replace(" ","_")
+                finales.append(t)
+        return finales

@@ -377,7 +377,7 @@ class experiment:
             X.append(val)
             Y.append(result*100)
             Xd.append(val)
-            Yd.append(mean_dev)
+            Yd.append(mean_dev*100)
         self.p.line(X, Y, color=pal[1],legend="ICH",line_width=1.5)
         #self.p.line(Xd, Yd, color=pal[1],legend="ICH",line_width=1.5,line_dash='dotted')
         self.p.legend.background_fill_alpha = 0.5
@@ -520,6 +520,7 @@ class experiment:
                             for rt in n2v.r_deleted:
                                 temp_pos[rt] = []
                                 temp_name[rt] = []
+                                print "Se va a comparar con: " + str(n2v.r_deleted[rt][0]["tipot"])
                                 for idx,e in enumerate(n2v.nodes_type):
                                     if e == n2v.r_deleted[rt][0]["tipot"]:
                                         temp_pos[rt].append(n2v.nodes_pos[idx])
@@ -601,11 +602,146 @@ class experiment:
             X.append(val)
             Y.append(result*100)
             Xd.append(val)
-            Yd.append(mean_dev)
+            Yd.append(mean_dev*100)
         self.p.line(X, Y, color=pal[1],legend="ICH",line_width=1.5)
         #self.p.line(Xd, Yd, color=pal[1],legend="ICH",line_width=1.5,line_dash='dotted')
         self.p.legend.background_fill_alpha = 0.5
         print self.bd
+        print "max accuracy: " + str(max(Y))
+        print "max dev: " + str(max(Yd))
+        return X,Y,Xd,Yd
+
+    def traversal_prediction(self,traversal,a,b,jump,metrica,filtrado):
+        # Valores para la grafica de precision en la prediccion
+        pal = pallete("db")
+        X = []
+        Y = []
+        # Valores para la grafica de desviacion en la prediccion
+        Xd = []
+        Yd = []
+        i = 1
+        for i in range(a,b+1):
+            val = i * jump    
+            if self.param == "ns":
+                k = 3
+            if self.param == "l":
+                k = 3
+            if self.param == "ndim":
+                k = 3
+            if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
+                k = val
+            resultados = []   
+            if not os.path.exists("models/"+traversal+"_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p") or not os.path.exists("models/"+traversal+"_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p") or not os.path.exists("models/"+traversal+"_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p"):
+                final = 0
+                for it in range(self.iteraciones):
+                    if self.param == "ns":
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,val,200,6,self.mode,[],self.iteraciones)
+                        k = 3
+                    if self.param == "l":
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,val,self.mode,[],self.iteraciones)
+                        k = 3
+                    if self.param == "ndim":
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,val,6,self.mode,[],self.iteraciones)
+                        k = 3
+                    #si lo que vamos a estudiar no son los parametros libres de la inmersion, fijamos dichos parametros a sus valores optimos segun BD
+                    if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
+                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
+                    n2v.learn(self.mode,0,False,it)
+                    total = 0
+                    parcial = 0
+                    n2v.r_analysis()
+                    #Obtenemos el vector medio del traversal solicitado. 
+                    v_traversal = n2v.get_vtraversal(traversal)
+                    #Obtenemos una serie de traversals por los que vamos a preguntar. Es una lista que contiene diccionarios con: nodo origen (s), nodo destino (t) y tipo del nodo destino (tipot).
+                    traversals = n2v.get_traversals(traversal,self.trainset_p)
+                    if metrica == "MRR":
+                        if filtrado:
+                            temp_pos = []
+                            temp_name = []
+                            print "Se va a comparar con: " + str(traversals[0]["tipot"])
+                            for idx,e in enumerate(n2v.nodes_type):
+                                if e == traversals[0]["tipot"]:
+                                    temp_pos.append(n2v.nodes_pos[idx])
+                                    temp_name.append(n2v.nodes_name[idx])
+                            if len(temp_pos) < 1000:
+                                ks = len(temp_pos)
+                            else:
+                                ks = 1000                                
+                            clasificador = neighbors.KNeighborsClassifier(ks, "uniform",n_jobs=multiprocessing.cpu_count())
+                            clasificador.fit(temp_pos, temp_name)
+                        print "A continuacion la verificacion de traversals"
+                        for t in traversals:
+                            rs = t["s"]
+                            tipot = t["tipot"]
+                            if rs in n2v.w2v and not '"' in rs:
+                                total = total + 1
+                                nbs = clasificador.kneighbors(n2v.w2v[rs]+v_traversal,ks,False)[0]
+                                nbs1 = []
+                                for e in nbs:
+                                    nbs1.append(temp_name[e])
+                                if t["t"] in nbs1:
+                                    print "ESTA EN LA LISTA DEVUELTA"
+                                    print t["t"]
+                                    print nbs1.index(t["t"])
+                                    parcial += float(1 / float(nbs1.index(t["t"])+1 ))
+                                    print "PUNTUACION"
+                                    print float(1 / float(nbs1.index(t["t"])+1 ))
+                        else:
+                            clf = neighbors.KNeighborsClassifier(1000, "uniform",n_jobs=multiprocessing.cpu_count())
+                            clf.fit(n2v.nodes_pos, n2v.nodes_name)
+                            print "A continuacion la verificacion de traversals"
+                            for t in traversals:
+                                rs = t["s"]
+                                tipot = t["tipot"]
+                                if rs in n2v.w2v and not '"' in rs:
+                                    total = total + 1
+                                    nbs = clf.kneighbors(n2v.w2v[rs]+v_traversal,1000,False)[0]
+                                    nbs1 = []
+                                    for e in nbs:
+                                        nbs1.append(n2v.nodes_name[e])
+                                    if t["t"] in nbs1:
+                                        print "ESTA EN LA LISTA DEVUELTA"
+                                        print t["t"]
+                                        print nbs1.index(t["t"])
+                                        parcial += float(1 / float(nbs1.index(t["t"])+1 ))
+                                        print "PUNTUACION"
+                                        print float(1 / float(nbs1.index(t["t"])+1 ))
+                        if total > 0:
+                            resultIN = float(parcial)/float(total)
+                        else:
+                            resultIN = 0
+                    final += resultIN
+                    resultados.append(resultIN)
+                result = final / self.iteraciones                
+                mean_dev = 0
+                for r in resultados:
+                    mean_dev += (r - result) * (r - result)
+                mean_dev = math.sqrt(mean_dev)
+                print "RESULTADOS DE UN PUNTO"
+                print resultados
+                print mean_dev
+                f1 = open( "models/"+traversal+"_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p", "w" )
+                pickle.dump(mean_dev,f1)
+                f2 = open( "models/"+traversal+"_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p", "w" )
+                pickle.dump(resultados,f2)
+                f3 = open( "models/"+traversal+"_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p", "w" )
+                pickle.dump(result,f3)
+            else:
+                f1 = open( "models/"+traversal+"_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p", "r" )
+                mean_dev = pickle.load(f1)
+                f2 = open( "models/"+traversal+"_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p", "r" )
+                resultados = pickle.load(f2)
+                f3 = open( "models/"+traversal+"_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p", "r" )
+                result = pickle.load(f3)
+            X.append(val)
+            Y.append(result*100)
+            Xd.append(val)
+            Yd.append(mean_dev*100)
+        self.p.line(X, Y, color=pal[1],legend="ICH",line_width=1.5)
+        #self.p.line(Xd, Yd, color=pal[1],legend="ICH",line_width=1.5,line_dash='dotted')
+        self.p.legend.background_fill_alpha = 0.5
+        print self.bd
+        print "YOO"
         print "max accuracy: " + str(max(Y))
         print "max dev: " + str(max(Yd))
         return X,Y,Xd,Yd
