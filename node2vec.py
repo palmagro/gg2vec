@@ -130,15 +130,17 @@ class node2vec:
             #el metodo delete_rels elimina las relaciones por las que despues preguntaremos de self.sentences_array antes de entrenar y devuelve el nuevo dump con las relaciones quitadas y una lista de las relaciones quitadas
             self.learn(m,0,False,it)
             self.get_rels([])
-            sentences_del,self.r_deleted = delete_rels(self.sentences_array,self.r_types,ts)
+            sents,self.r_deleted = delete_rels(self.sentences_array,self.r_types,ts)
             self.path = self.path + "del"+str(ts)+"-"
+        else:
+            sents = self.sentences_array
         self.path = self.path +str(it)+".npy"
         print "Learning:" + self.path
         print "CCCC!"
         if not os.path.exists(self.path):
             print "Entra"
             entrada = []
-            results = Parallel(n_jobs=num_cores, backend="threading")(delayed(generate_sample)(self.mode,sentences_del,self.degree,self.w_size,i) for i in range(1,self.ns))
+            results = Parallel(n_jobs=num_cores, backend="threading")(delayed(generate_sample)(self.mode,sents,self.degree,self.w_size,i) for i in range(1,self.ns))
             for r in results:
                 entrada.append(r) 
             self.w2v = word2vec.Word2Vec(entrada, size=self.ndim, window=self.w_size, min_count=1, workers=num_cores,sg=0) 

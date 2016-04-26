@@ -517,6 +517,7 @@ class experiment:
                             temp_pos = {}
                             temp_name = {}
                             ks = {}
+                            total = 0
                             for rt in n2v.r_deleted:
                                 temp_pos[rt] = []
                                 temp_name[rt] = []
@@ -533,45 +534,55 @@ class experiment:
                                 clasificadores[rt].fit(temp_pos[rt], temp_name[rt])
                             print "A continuacion las aristas eliminadas"
                             for rt in n2v.r_deleted:
+                                targettopredict = []
+                                linkstopredictV = []
                                 for d in n2v.r_deleted[rt]:
                                     rs = d["s"]
                                     rel = d["tipo"]
                                     tipot = d["tipot"]
                                     if rs in n2v.w2v and not '"' in rs:
-                                        total = total + 1
-                                        nbs = clasificadores[rt].kneighbors(n2v.w2v[rs]+n2v.m_vectors[str(rel)],ks[rt],False)[0]
-                                        nbs1 = []
-                                        for idx,e in enumerate(nbs):
-                                            nbs1.append(temp_name[rt][e])
-                                        if d["t"] in nbs1:
-                                            print "ESTA EN LA LISTA DEVUELTA"
-                                            print d["t"]
-                                            print nbs1.index(d["t"])
-                                            parcial += float(1 / float(nbs1.index(d["t"])+1 ))
-                                            print "PUNTUACION"
-                                            print float(1 / float(nbs1.index(d["t"])+1 ))
+                                        total += 1
+                                        targettopredict.append(d["t"])
+                                        linkstopredictV.append(n2v.w2v[rs]+n2v.m_vectors[str(rel)])
+                                nbs = clasificadores[rt].kneighbors(linkstopredictV,ks[rt],False)
+                                for idx,e in enumerate(nbs):
+                                    nbs1 = []
+                                    for i in e:
+                                        nbs1.append(temp_name[rt][i])
+                                    if targettopredict[idx] in nbs1:
+                                        print "ESTA EN LA LISTA DEVUELTA"
+                                        print targettopredict[idx]
+                                        print nbs1.index(targettopredict[idx])
+                                        parcial += float(1 / float(nbs1.index(targettopredict[idx])+1 ))
+                                        print "PUNTUACION"
+                                        print float(1 / float(nbs1.index(targettopredict[idx])+1 ))
                         else:
                             clf = neighbors.KNeighborsClassifier(1000, "uniform",n_jobs=multiprocessing.cpu_count())
                             clf.fit(n2v.nodes_pos, n2v.nodes_name)
                             print "A continuacion las aristas eliminadas"
+                            targettopredict = []
+                            linkstopredictV = []
                             for rt in n2v.r_deleted:
                                 for d in n2v.r_deleted[rt]:
                                     rs = d["s"]
                                     rel = d["tipo"]
                                     tipot = d["tipot"]
                                     if rs in n2v.w2v and not '"' in rs:
-                                        total = total + 1
-                                        nbs = clf.kneighbors(n2v.w2v[rs]+n2v.m_vectors[str(rel)],1000,False)[0]
-                                        nbs1 = []
-                                        for idx,e in enumerate(nbs):
-                                            nbs1.append(n2v.nodes_name[e])
-                                        if d["t"] in nbs1:
-                                            print "ESTA EN LA LISTA DEVUELTA"
-                                            print d["t"]
-                                            print nbs1.index(d["t"])
-                                            parcial += float(1 / float(nbs1.index(d["t"])+1 ))
-                                            print "PUNTUACION"
-                                            print float(1 / float(nbs1.index(d["t"])+1 ))
+                                        total += 1
+                                        targettopredict.append(d["t"])
+                                        linkstopredictV.append(n2v.w2v[rs]+n2v.m_vectors[str(rel)])
+                            nbs = clf.kneighbors(linkstopredictV,1000,False)
+                            for idx,e in enumerate(nbs):
+                                nbs1 = []
+                                for i in e:
+                                    nbs1.append(n2v.nodes_name[i])
+                                if targettopredict[idx] in nbs1:
+                                    print "ESTA EN LA LISTA DEVUELTA"
+                                    print targettopredict[idx]
+                                    print nbs1.index(targettopredict[idx])
+                                    parcial += float(1 / float(nbs1.index(targettopredict[idx])+1 ))
+                                    print "PUNTUACION"
+                                    print float(1 / float(nbs1.index(targettopredict[idx])+1 ))
                         if total > 0:
                             resultIN = float(parcial)/float(total)
                         else:
@@ -669,45 +680,59 @@ class experiment:
                                 ks = 1000                                
                             clasificador = neighbors.KNeighborsClassifier(ks, "uniform",n_jobs=multiprocessing.cpu_count())
                             clasificador.fit(temp_pos, temp_name)
-                        print "A continuacion la verificacion de traversals"
-                        for t in traversals:
-                            rs = t["s"]
-                            tipot = t["tipot"]
-                            if rs in n2v.w2v and not '"' in rs:
-                                total = total + 1
-                                nbs = clasificador.kneighbors(n2v.w2v[rs]+v_traversal,ks,False)[0]
-                                nbs1 = []
-                                for e in nbs:
-                                    nbs1.append(temp_name[e])
-                                if t["t"] in nbs1:
-                                    print "ESTA EN LA LISTA DEVUELTA"
-                                    print t["t"]
-                                    print nbs1.index(t["t"])
-                                    parcial += float(1 / float(nbs1.index(t["t"])+1 ))
-                                    print "PUNTUACION"
-                                    print float(1 / float(nbs1.index(t["t"])+1 ))
-                        else:
-                            clf = neighbors.KNeighborsClassifier(1000, "uniform",n_jobs=multiprocessing.cpu_count())
-                            clf.fit(n2v.nodes_pos, n2v.nodes_name)
                             print "A continuacion la verificacion de traversals"
+                            targettopredict = []
+                            linkstopredictV = []
+                            linkstopredictV = []
                             for t in traversals:
                                 rs = t["s"]
                                 tipot = t["tipot"]
                                 if rs in n2v.w2v and not '"' in rs:
-                                    total = total + 1
-                                    nbs = clf.kneighbors(n2v.w2v[rs]+v_traversal,1000,False)[0]
+                                    targettopredict.append(t["t"])
+                                    linkstopredictV.append(n2v.w2v[rs]+v_traversal)
+                                total += len(linkstopredictV)
+                                nbs = clasificador.kneighbors(linkstopredictV,ks,False)
+                                for idx,e in enumerate(nbs):
                                     nbs1 = []
-                                    for e in nbs:
-                                        nbs1.append(n2v.nodes_name[e])
-                                    if t["t"] in nbs1:
+                                    for i in e:
+                                        nbs1.append(temp_name[i])
+                                    if targettopredict[idx] in nbs1:
                                         print "ESTA EN LA LISTA DEVUELTA"
-                                        print t["t"]
-                                        print nbs1.index(t["t"])
-                                        parcial += float(1 / float(nbs1.index(t["t"])+1 ))
+                                        print targettopredict[idx]
+                                        print nbs1.index(targettopredict[idx])
+                                        parcial += float(1 / float(nbs1.index(targettopredict[idx])+1 ))
                                         print "PUNTUACION"
-                                        print float(1 / float(nbs1.index(t["t"])+1 ))
+                                        print float(1 / float(nbs1.index(targettopredict[idx])+1 ))
+                        else:
+                            clf = neighbors.KNeighborsClassifier(1000, "uniform",n_jobs=multiprocessing.cpu_count())
+                            clf.fit(n2v.nodes_pos, n2v.nodes_name)
+                            print "A continuacion la verificacion de traversals"
+                            targettopredict = []
+                            linkstopredictV = []
+                            for t in traversals:
+                                rs = t["s"]
+                                tipot = t["tipot"]
+                                if rs in n2v.w2v and not '"' in rs:
+                                    targettopredict.append(t["t"])
+                                    linkstopredictV.append(n2v.w2v[rs]+v_traversal)
+                                total = len(linkstopredictV)
+                                nbs = clf.kneighbors(linkstopredictV,1000,False)
+                                for idx,e in enumerate(nbs):
+                                    nbs1 = []
+                                    for i in e:
+                                        nbs1.append(n2v.nodes_name[i])
+                                    if targettopredict[idx] in nbs1:
+                                        print "ESTA EN LA LISTA DEVUELTA"
+                                        print targettopredict[idx]
+                                        print nbs1.index(targettopredict[idx])
+                                        parcial += float(1 / float(nbs1.index(targettopredict[idx])+1 ))
+                                        print "PUNTUACION"
+                                        print float(1 / float(nbs1.index(targettopredict[idx])+1 ))
                         if total > 0:
+                            print parcial
+                            print total
                             resultIN = float(parcial)/float(total)
+                            print resultIN
                         else:
                             resultIN = 0
                     final += resultIN
