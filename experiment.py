@@ -691,6 +691,8 @@ class experiment:
                                     targettopredict.append(t["t"])
                                     linkstopredictV.append(n2v.w2v[rs]+v_traversal)
                                 total += len(linkstopredictV)
+                                print "Tamanio del conjunto de entrenamiento"
+                                print len(linkstopredictV)
                                 nbs = clasificador.kneighbors(linkstopredictV,ks,False)
                                 for idx,e in enumerate(nbs):
                                     nbs1 = []
