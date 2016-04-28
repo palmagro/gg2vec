@@ -467,5 +467,5 @@ data=dict(
             t["s"] = t["s"].replace(" ","_")
             t["t"] = t["t"].replace(" ","_")
             t["tipot"] = t["tipot"].replace(" ","_")
-        finales = random.sample(todas, int(len(todas)/ts))
+        finales = random.sample(todas, int(len(todas)*ts))
         return finales
