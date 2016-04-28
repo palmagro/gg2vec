@@ -658,7 +658,6 @@ class experiment:
                     if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
                         n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
                     n2v.learn(self.mode,0,False,it)
-                    total = 0
                     parcial = 0
                     n2v.r_analysis()
                     #Obtenemos el vector medio del traversal solicitado. 
@@ -691,7 +690,7 @@ class experiment:
                                     linkstopredictV.append(n2v.w2v[rs]+v_traversal)
                             print "Tamanio del conjunto de entrenamiento"
                             print len(linkstopredictV)
-                            total += len(linkstopredictV)
+                            total = len(linkstopredictV)
                             nbs = clasificador.kneighbors(linkstopredictV,ks,False)
                             for idx,e in enumerate(nbs):
                                 nbs1 = []
@@ -716,19 +715,19 @@ class experiment:
                                 if rs in n2v.w2v and not '"' in rs:
                                     targettopredict.append(t["t"])
                                     linkstopredictV.append(n2v.w2v[rs]+v_traversal)
-                                total = len(linkstopredictV)
-                                nbs = clf.kneighbors(linkstopredictV,1000,False)
-                                for idx,e in enumerate(nbs):
-                                    nbs1 = []
-                                    for i in e:
-                                        nbs1.append(n2v.nodes_name[i])
-                                    if targettopredict[idx] in nbs1:
-                                        print "ESTA EN LA LISTA DEVUELTA"
-                                        print targettopredict[idx]
-                                        print nbs1.index(targettopredict[idx])
-                                        parcial += float(1 / float(nbs1.index(targettopredict[idx])+1 ))
-                                        print "PUNTUACION"
-                                        print float(1 / float(nbs1.index(targettopredict[idx])+1 ))
+                            total = len(linkstopredictV)
+                            nbs = clf.kneighbors(linkstopredictV,1000,False)
+                            for idx,e in enumerate(nbs):
+                                nbs1 = []
+                                for i in e:
+                                    nbs1.append(n2v.nodes_name[i])
+                                if targettopredict[idx] in nbs1:
+                                    print "ESTA EN LA LISTA DEVUELTA"
+                                    print targettopredict[idx]
+                                    print nbs1.index(targettopredict[idx])
+                                    parcial += float(1 / float(nbs1.index(targettopredict[idx])+1 ))
+                                    print "PUNTUACION"
+                                    print float(1 / float(nbs1.index(targettopredict[idx])+1 ))
                         if total > 0:
                             print parcial
                             print total
