@@ -689,22 +689,21 @@ class experiment:
                                 if rs in n2v.w2v and not '"' in rs:
                                     targettopredict.append(t["t"])
                                     linkstopredictV.append(n2v.w2v[rs]+v_traversal)
-                                print "Tamanio del conjunto de entrenamiento"
-                                print len(linkstopredictV)
-                                if len(linkstopredictV) > 2:
-                                    total += len(linkstopredictV)
-                                    nbs = clasificador.kneighbors(linkstopredictV,ks,False)
-                                    for idx,e in enumerate(nbs):
-                                        nbs1 = []
-                                        for i in e:
-                                            nbs1.append(temp_name[i])
-                                        if targettopredict[idx] in nbs1:
-                                            print "ESTA EN LA LISTA DEVUELTA"
-                                            print targettopredict[idx]
-                                            print nbs1.index(targettopredict[idx])
-                                            parcial += float(1 / float(nbs1.index(targettopredict[idx])+1 ))
-                                            print "PUNTUACION"
-                                            print float(1 / float(nbs1.index(targettopredict[idx])+1 ))
+                            print "Tamanio del conjunto de entrenamiento"
+                            print len(linkstopredictV)
+                            total += len(linkstopredictV)
+                            nbs = clasificador.kneighbors(linkstopredictV,ks,False)
+                            for idx,e in enumerate(nbs):
+                                nbs1 = []
+                                for i in e:
+                                    nbs1.append(temp_name[i])
+                                if targettopredict[idx] in nbs1:
+                                    print "ESTA EN LA LISTA DEVUELTA"
+                                    print targettopredict[idx]
+                                    print nbs1.index(targettopredict[idx])
+                                    parcial += float(1 / float(nbs1.index(targettopredict[idx])+1 ))
+                                    print "PUNTUACION"
+                                    print float(1 / float(nbs1.index(targettopredict[idx])+1 ))
                         else:
                             clf = neighbors.KNeighborsClassifier(1000, "uniform",n_jobs=multiprocessing.cpu_count())
                             clf.fit(n2v.nodes_pos, n2v.nodes_name)
