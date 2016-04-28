@@ -463,11 +463,9 @@ data=dict(
         else:
             f = open( "models/" + self.bd+"-trav-" + traversal + ".p", "r" )
             todas = pickle.load(f)
-        finales = []
         for t in todas:
-            if random.random() < ts:
-                t["s"] = t["s"].replace(" ","_")
-                t["t"] = t["t"].replace(" ","_")
-                t["tipot"] = t["tipot"].replace(" ","_")
-                finales.append(t)
+            t["s"] = t["s"].replace(" ","_")
+            t["t"] = t["t"].replace(" ","_")
+            t["tipot"] = t["tipot"].replace(" ","_")
+        finales = random.sample(todas, int(len(todas)/ts))
         return finales

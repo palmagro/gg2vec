@@ -683,7 +683,6 @@ class experiment:
                             print "A continuacion la verificacion de traversals"
                             targettopredict = []
                             linkstopredictV = []
-                            linkstopredictV = []
                             for t in traversals:
                                 rs = t["s"]
                                 tipot = t["tipot"]
@@ -692,7 +691,7 @@ class experiment:
                                     linkstopredictV.append(n2v.w2v[rs]+v_traversal)
                                 print "Tamanio del conjunto de entrenamiento"
                                 print len(linkstopredictV)
-                                if len(linkstopredictV) > 3:
+                                if len(linkstopredictV) > 2:
                                     total += len(linkstopredictV)
                                     nbs = clasificador.kneighbors(linkstopredictV,ks,False)
                                     for idx,e in enumerate(nbs):
