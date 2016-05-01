@@ -126,7 +126,6 @@ class node2vec:
         print "numCores = " + str(num_cores)
         self.path = "models/" + self.bd + str(self.ndim) +"d-"+str(self.ns)+"w"+str(self.w_size)+"l"+m
         if d:
-
             #el metodo delete_rels elimina las relaciones por las que despues preguntaremos de self.sentences_array antes de entrenar y devuelve el nuevo dump con las relaciones quitadas y una lista de las relaciones quitadas
             self.learn(m,0,False,it)
             self.get_rels([])
@@ -469,3 +468,26 @@ data=dict(
             t["tipot"] = t["tipot"].replace(" ","_")
         finales = random.sample(todas, int(len(todas)*ts))
         return finales
+
+    def entity_retrieval(self,node,rel_type,target_t):
+        temp_pos = []
+        temp_name = []
+        linkstopredictV = []
+        self.r_analysis()
+        for idx,e in enumerate(self.nodes_type):
+            if e == target_t:
+                temp_pos.append(self.nodes_pos[idx])
+                temp_name.append(self.nodes_name[idx])
+        if len(temp_pos) < 1000:
+            ks = len(temp_pos)
+        else:
+            ks = 1000                                
+        clasificador = neighbors.KNeighborsClassifier(ks, "uniform",n_jobs=multiprocessing.cpu_count())
+        clasificador.fit(temp_pos, temp_name)
+        linkstopredictV.append(self.w2v[node]+self.m_vectors[str(rel_type)])
+        nbs = clasificador.kneighbors(linkstopredictV,ks,False)
+        result = []
+        for e in nbs[0]:
+            result.append(temp_name[e])
+        return result
+
