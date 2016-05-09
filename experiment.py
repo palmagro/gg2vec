@@ -121,7 +121,7 @@ class experiment:
             matrices = [None] * self.iteraciones
             #repetimos para self.iteraciones experimentos
             for it in range(self.iteraciones):
-                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,800000,200,6,self.mode,[],self.iteraciones)
+                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
                 n2v.learn(self.mode,self.trainset_p,False,it)
                 #generamos un diccionario para saber las posiciones de cada tipo de nodo en la matriz
                 dic = dict()
@@ -393,7 +393,7 @@ class experiment:
             matrices = [None] * self.iteraciones
             #repetimos para self.iteraciones experimentos
             for it in range(self.iteraciones):
-                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,6,self.mode,[],self.iteraciones)
+                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
                 n2v.learn(self.mode,self.trainset_p,False)
                 #generamos un diccionario para saber las posiciones de cada tipo de nodo en la matriz
                 dic = dict()
