@@ -48,7 +48,7 @@ class composite_experiment:
         for idx,t in enumerate(traversals):
             e = experiment(self.ds[0],7474,user,pswd,self.ds[1],"normal",self.param,self.trainset_p,self.iteraciones)
             x,y,xd,yd = e.traversal_prediction(t,a,b,jump,metrica,filtrado)
-            self.p.line(x, y, color=pal[idx],legend=t,line_width=2.0)
+            self.p.line(x, y, color=pal[idx],legend="T"+str(idx+1),line_width=2.0)
             if(dev):
                 self.p.line(xd, yd, color=pal[idx],legend=self.ds[2] + "dev",line_width=2.0,line_dash='dotted')
             self.p.legend.background_fill_alpha = 0.5       
