@@ -184,14 +184,7 @@ class experiment:
             for j in range(1,len(matriz_promedio)):                
                 suma += matriz_promedio[i][j]
             for j in range(1,len(matriz_promedio)):                
-                matriz_promedio[i][j] = str(round(float(matriz_promedio[i][j] * 100) / float(suma),2))+"%"
-        #Poniendo negritas
-        for i in range(1,len(matriz_promedio)):
-            matriz_promedio[i][0] =  "\meg{ "+str(matriz_promedio[i][0])+"}"
-            matriz_promedio[0][i] =  "\meg{ "+matriz_promedio[0][i]+"}"
-        for i in range(1,len(matriz_promedio)):
-            matriz_promedio[i][i] =  "\meg{ "+matriz_promedio[i][i]+"}"
-        matriz_promedio[0][0] = ""
+                matriz_promedio[i][j] = round(float(matriz_promedio[i][j] * 100) / float(suma),2)
         return matriz_promedio
 
 
@@ -394,7 +387,7 @@ class experiment:
             #repetimos para self.iteraciones experimentos
             for it in range(self.iteraciones):
                 n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
-                n2v.learn(self.mode,self.trainset_p,False)
+                n2v.learn(self.mode,self.trainset_p,False,it)
                 #generamos un diccionario para saber las posiciones de cada tipo de nodo en la matriz
                 dic = dict()
                 for idx,t in enumerate(n2v.r_types):
@@ -417,8 +410,8 @@ class experiment:
                     for r in n2v.r_types[t]:
                         link_vectors.append(r["v"])
                         link_types.append(t)
-                if len(pos) - 1 < k:
-                    k1 = len(pos) - 1
+                if len(link_vectors) - 1 < k:
+                    k1 = len(link_vectors) - 1
                 else:
                     k1 = k
                 clf = neighbors.KNeighborsClassifier(k1+1, "uniform",n_jobs=multiprocessing.cpu_count())
@@ -462,14 +455,7 @@ class experiment:
             for j in range(1,len(matriz_promedio)):                
                 suma += matriz_promedio[i][j]
             for j in range(1,len(matriz_promedio)):                
-                matriz_promedio[i][j] = str(round(float(matriz_promedio[i][j] * 100) / float(suma),2))+"%"
-        #Poniendo negritas
-        for i in range(1,len(matriz_promedio)):
-            matriz_promedio[i][0] =  "\meg{ "+str(matriz_promedio[i][0])+"}"
-            matriz_promedio[0][i] =  "\meg{ "+matriz_promedio[0][i]+"}"
-        for i in range(1,len(matriz_promedio)):
-            matriz_promedio[i][i] =  "\meg{ "+matriz_promedio[i][i]+"}"
-        matriz_promedio[0][0] = ""
+                matriz_promedio[i][j] = round(float(matriz_promedio[i][j] * 100) / float(suma),2)
         return matriz_promedio
 
 

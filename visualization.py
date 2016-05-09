@@ -14,6 +14,7 @@ from bokeh.charts import Line
 import math 
 from aux import *
 from node2vec import *
+import colorsys
 
 colormapn = ["#1C75BC","#FCAF17","#EF4136","#682F79","#a6cee3", "#444444", "#1f78b4", "#b2df8a", "#33a02c","#fb9a99","FF6600"]
 colormap2 = [
@@ -329,4 +330,66 @@ def show2D(model,t):
         y.append(result[idx][1])
 
     vis(model,t,x,y,label)
+
+def visual_matrix(matriz,color):
+    print matriz
+    names = []
+    xname = []
+    yname = []
+    color = []
+    alpha = []
+    confusion = []
+    for idx,n in enumerate(matriz):
+        if idx != 0:
+            names.append(matriz[idx][0])
+    for idx1,n1 in enumerate(matriz):
+        for idx2,n2 in enumerate(matriz):
+            if idx1 != 0 and idx2 != 0:
+                xname.append(matriz[idx1][0])
+                yname.append(matriz[0][idx2])
+                if not color:
+                    alpha.append(matriz[idx1][idx2]/100)
+                    confusion.append(matriz[idx1][idx2])
+                    color.append('black')
+                else:
+                    color.append('%02x%02x%02x' % colorsys.hls_to_rgb(matriz[idx1][idx2]/100, 0.5, 0.5))
+                    print '%02x%02x%02x' % colorsys.hls_to_rgb(matriz[idx1][idx2]/100, 0.5, 0.5)
+    print xname
+    print yname
+    print alpha
+    source = ColumnDataSource(
+data=dict(
+            xname=xname,
+            yname=yname,
+            colors=color,
+            alphas=alpha,
+            angles=confusion
+        )
+    )
+    p = figure(x_axis_location="above", tools="resize,hover,save",
+        x_range=list(reversed(names)), y_range=names)
+    p.rect('xname', 'yname', 0.9, 0.9, source=source,
+         color='colors', alpha='alphas', line_color=None)
+    p.grid.grid_line_color = None
+    p.axis.axis_line_color = None
+    p.axis.major_tick_line_color = None
+    p.axis.major_label_text_font_size = "5pt"
+    p.axis.major_label_standoff = 0
+    p.xaxis.major_label_orientation = np.pi/3
+    hover = p.select(dict(type=HoverTool))
+    hover.tooltips = OrderedDict([
+        ('names', '@yname, @xname'),
+        ('angle', '@angles'),
+    ])
+    return p
+
+def latex_matrix(matriz):
+    #Poniendo negritas
+    for i in range(1,len(matriz)):
+        matriz[i][0] =  "\meg{ "+str(matriz[i][0])+"}"
+        matriz[0][i] =  "\meg{ "+matriz[0][i]+"}"
+    for i in range(1,len(matriz)):
+        matriz[i][i] =  "\meg{ "+matriz[i][i]+"}"
+    matriz[0][0] = ""
+    return matriz
 
