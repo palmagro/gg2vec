@@ -138,6 +138,7 @@ def predict(model, pos, types, val,ts):
             it += 1   
         scores = np.array(scores)
         return scores.mean()
+
 def delete_rels(sentences_array,r_types,trainset_p):
     print "deleting relations..."
     r_deleted = {}

@@ -115,7 +115,8 @@ class experiment:
         return X,Y,Xd,Yd
     
     def ntype_conf_matrix(self):
-        k = 100000
+        k = 3
+        print "models/ntype_conf_matrix" + self.bd +"ts"+str(self.trainset_p)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p"
         if not os.path.exists("models/ntype_conf_matrix" + self.bd +"ts"+str(self.trainset_p)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p") or True:
             matrices = [None] * self.iteraciones
             #repetimos para self.iteraciones experimentos
