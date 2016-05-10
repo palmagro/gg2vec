@@ -9,7 +9,7 @@ class composite_experiment:
     def __init__(self,ds,param,trainset_p,iteraciones):
         self.ds = ds
         self.param = param
-        self.p = figure(plot_width=450, plot_height=240)    
+        self.p = figure(plot_width=800, plot_height=400)    
         self.trainset_p = trainset_p
         self.iteraciones = iteraciones
 
@@ -21,7 +21,9 @@ class composite_experiment:
             self.p.line(x, y, color=pal[idx],legend=d[2],line_width=2.0)
             if(dev):
                 self.p.line(xd, yd, color=pal[idx],legend=d[2] + "dev",line_width=2.0,line_dash='dotted')
-            self.p.legend.background_fill_alpha = 0.5
+            self.p.legend.background_fill_alpha = 0.7
+            self.p.xaxis.axis_label = xaxis_legend[self.param]
+            self.p.yaxis.axis_label = 'Accuracy'
 
     def ltype_prediction(self,a,b,jump,dev):
         pal = pallete("db")
@@ -32,6 +34,9 @@ class composite_experiment:
             if(dev):
                 self.p.line(xd, yd, color=pal[idx],legend=d[2] + "dev",line_width=2.0,line_dash='dotted')
             self.p.legend.background_fill_alpha = 0.5    
+            self.p.xaxis.axis_label = xaxis_legend[self.param]
+            self.p.yaxis.axis_label = 'Accuracy'
+
 
     def link_prediction(self,traversals,a,b,jump,dev,metrica,filtrado):
         pal = pallete("db")
@@ -42,6 +47,8 @@ class composite_experiment:
             if(dev):
                 self.p.line(xd, yd, color=pal[idx],legend=d[2] + "dev",line_width=2.0,line_dash='dotted')
             self.p.legend.background_fill_alpha = 0.5        
+            self.p.xaxis.axis_label = xaxis_legend[self.param]
+            self.p.yaxis.axis_label = 'MRR'
 
     def traversal_prediction(self,traversals,a,b,jump,dev,metrica,filtrado):
         pal = pallete("traversals")
@@ -52,3 +59,5 @@ class composite_experiment:
             if(dev):
                 self.p.line(xd, yd, color=pal[idx],legend=self.ds[2] + "dev",line_width=2.0,line_dash='dotted')
             self.p.legend.background_fill_alpha = 0.5       
+            self.p.xaxis.axis_label = xaxis_legend[self.param]
+            self.p.yaxis.axis_label = 'MRR'

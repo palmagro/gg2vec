@@ -15,6 +15,7 @@ import math
 from aux import *
 from node2vec import *
 import colorsys
+colormapdb = ["#0000FF","#FF0000","#00FF00","#682F79","#a6cee3", "#444444", "#1f78b4", "#b2df8a", "#33a02c","#fb9a99","FF6600"]
 
 colormapn = ["#1C75BC","#FCAF17","#EF4136","#682F79","#a6cee3", "#444444", "#1f78b4", "#b2df8a", "#33a02c","#fb9a99","FF6600"]
 colormap2 = [
@@ -58,7 +59,10 @@ def pallete(t):
             if t == "traversals":
                 return cycle_colors(test,palette=colormap)  
             else:
-                return cycle_colors(test,palette=colormapa)  
+                if t == "db":
+                    return cycle_colors(test,palette=colormapdb)  
+                else:
+                    return cycle_colors(test,palette=colormapa)                      
 
 def links_figure(n2v):
     pal = pallete("links") 
@@ -331,7 +335,7 @@ def show2D(model,t):
 
     vis(model,t,x,y,label)
 
-def visual_matrix(matriz,color):
+def visual_matrix(matriz,colorFlag):
     print matriz
     names = []
     xname = []
@@ -347,13 +351,15 @@ def visual_matrix(matriz,color):
             if idx1 != 0 and idx2 != 0:
                 xname.append(matriz[idx1][0])
                 yname.append(matriz[0][idx2])
-                if not color:
+                if not colorFlag:
                     alpha.append(matriz[idx1][idx2]/100)
                     confusion.append(matriz[idx1][idx2])
                     color.append('black')
                 else:
-                    color.append('%02x%02x%02x' % colorsys.hls_to_rgb(matriz[idx1][idx2]/100, 0.5, 0.5))
-                    print '%02x%02x%02x' % colorsys.hls_to_rgb(matriz[idx1][idx2]/100, 0.5, 0.5)
+                    temp =  colorsys.hls_to_rgb(matriz[idx1][idx2]/300, 0.5, 0.5)     
+                    color.append('#%02x%02x%02x' % (float(temp[0])*255,float(temp[1])*255,float(temp[2]*255)))
+                    alpha.append(1)
+                    confusion.append(matriz[idx1][idx2])
     print xname
     print yname
     print alpha
@@ -373,7 +379,7 @@ data=dict(
     p.grid.grid_line_color = None
     p.axis.axis_line_color = None
     p.axis.major_tick_line_color = None
-    p.axis.major_label_text_font_size = "5pt"
+    p.axis.major_label_text_font_size = "15pt"
     p.axis.major_label_standoff = 0
     p.xaxis.major_label_orientation = np.pi/3
     hover = p.select(dict(type=HoverTool))

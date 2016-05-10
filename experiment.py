@@ -44,6 +44,8 @@ class experiment:
         i = 1
         for i in range(a,b+1):
             val = i * jump  
+            if self.param == "k":
+                val = val - 1
             if self.param == "ns":
                 k = 3
             if self.param == "l":
@@ -310,6 +312,8 @@ class experiment:
         i = 1
         for i in range(a,b+1):
             val = i * jump    
+            if self.param == "k":
+                val = val - 1
             if self.param == "ns":
                 k = 3
             if self.param == "l":
