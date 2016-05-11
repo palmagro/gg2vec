@@ -1,5 +1,5 @@
 import csv
-from matplotlib import pyplot as plt
+from matplotlib import rcParams, pyplot as pl
 import random
 import numpy as np
 from bokeh.charts.utils import cycle_colors
@@ -337,6 +337,15 @@ def show2D(model,t):
 
 def visual_matrix(matriz,colorFlag):
     print matriz
+    newmatrix = []
+    for idx1,a in enumerate(matriz):
+        if idx1 > 0:
+            newmatrix.append([])
+            for idx2,b in enumerate(matriz[idx1]):
+                if idx2 > 0:
+                    print idx1
+                    newmatrix[idx1-1].append(b)
+
     names = []
     xname = []
     yname = []
@@ -356,7 +365,7 @@ def visual_matrix(matriz,colorFlag):
                     confusion.append(matriz[idx1][idx2])
                     color.append('black')
                 else:
-                    temp =  colorsys.hls_to_rgb(matriz[idx1][idx2]/300, 0.5, 0.5)     
+                    temp =  colorsys.hls_to_rgb(matriz[idx1][idx2]/200, 0.5, 0.7)     
                     color.append('#%02x%02x%02x' % (float(temp[0])*255,float(temp[1])*255,float(temp[2]*255)))
                     alpha.append(1)
                     confusion.append(matriz[idx1][idx2])
@@ -387,6 +396,17 @@ data=dict(
         ('names', '@yname, @xname'),
         ('angle', '@angles'),
     ])
+    print newmatrix
+    pl.matshow(newmatrix)
+    pl.colorbar()
+    pl.xticks(np.arange(0,len(newmatrix)), names, rotation=45, rotation_mode="anchor", ha='left')
+    pl.yticks(np.arange(0,len(newmatrix)), names)
+    pl.xlabel('Predicted',fontsize=17)
+    pl.ylabel('True',fontsize=17)
+    pl.tick_params(axis='both', which='major', labelsize=13)
+    pl.savefig("image.png",bbox_inches='tight',dpi=100)
+    pl.show()
+    print matriz
     return p
 
 def latex_matrix(matriz):

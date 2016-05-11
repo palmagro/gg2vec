@@ -320,8 +320,6 @@ class experiment:
                 k = 3
             if self.param == "ndim":
                 k = 3
-            if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
-                k = val
             resultados = []                
             if not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p") or not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p") or not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p"):
                 final = 0
@@ -349,7 +347,7 @@ class experiment:
                             link_vectors.append(r["v"])
                             link_types.append(t)
                     if self.param == "ns" or self.param == "ndim" or  self.param == "l":
-                        result = predict("k",link_vectors,link_types,val,self.trainset_p)
+                        result = predict("k",link_vectors,link_types,k,self.trainset_p)
                     else:
                         result = predict(self.param,link_vectors,link_types,val,self.trainset_p)
                     final += result
