@@ -8,7 +8,7 @@ from sklearn import svm,cross_validation
 from sknn.mlp import Classifier,Layer
 from sklearn.cross_validation import StratifiedKFold
 #Diccionario que almacena los valores optimos de la inmersion para cada una de las bases de datos
-optimos = {"cine":[400000,150,3],"inmaterial":[300000,20,2],"wordnet":[1000000,50,8]}
+optimos = {"cine":[400000,150,3],"cineNP":[400000,150,3],"inmaterial":[300000,20,2],"wordnet":[1000000,50,8],"wordnetNP":[1000000,50,8]}
 xaxis_legend = {"ns": "Training Set Size","l":"Selection Window Size","ndim":"Number of Dimensions","k":"k value","RF":"Number of Trees","ANN":"Number of Neurons in Hidden Layer"}
 
 def dotproduct(a,b):

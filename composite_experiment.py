@@ -9,7 +9,7 @@ class composite_experiment:
     def __init__(self,ds,param,trainset_p,iteraciones):
         self.ds = ds
         self.param = param
-        self.p = figure(plot_width=800, plot_height=400)    
+        self.p = figure(plot_width=500, plot_height=250)    
         self.trainset_p = trainset_p
         self.iteraciones = iteraciones
 
