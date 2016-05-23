@@ -1,0 +1,23 @@
+WN:
+
+ntp
+
+ns 1.000.000
+ndim 50
+l 8
+
+EICH:
+
+ntp 
+
+ns 300.000
+ndim 20
+l 2
+
+TMDb:
+
+ntp
+
+ns 400.000
+ndim 150
+l 3
