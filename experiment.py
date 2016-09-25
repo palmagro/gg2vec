@@ -600,9 +600,9 @@ class experiment:
                 f3 = open( "models/l_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+"Metrica-"+str(metrica)+"Filtrado-"+str(filtrado)+str(self.iteraciones)+".p", "r" )
                 result = pickle.load(f3)
             X.append(val)
-            Y.append(result*100)
+            Y.append(result)
             Xd.append(val)
-            Yd.append(mean_dev*100)
+            Yd.append(mean_dev)
         self.p.line(X, Y, color=pal[1],legend="ICH",line_width=1.5)
         #self.p.line(Xd, Yd, color=pal[1],legend="ICH",line_width=1.5,line_dash='dotted')
         self.p.legend.background_fill_alpha = 0.5
