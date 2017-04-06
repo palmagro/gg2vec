@@ -314,11 +314,7 @@ class experiment:
             val = i * jump    
             if self.param == "k":
                 val = val - 1
-            if self.param == "ns":
-                k = 3
-            if self.param == "l":
-                k = 3
-            if self.param == "ndim":
+            if self.param != "k":
                 k = 3
             resultados = []                
             if not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Promedio"+str(self.iteraciones)+".p") or not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"Resultados"+str(self.iteraciones)+".p") or not os.path.exists("models/ltype_prediction" + self.bd +"ts"+str(self.trainset_p)+self.param+str(val)+"k"+str(k)+"MeanDev"+str(self.iteraciones)+".p"):

@@ -12,7 +12,7 @@ from bokeh.charts import Line
 from gensim.models import word2vec
 import logging
 import random
-from py2neo import neo4j
+from py2neo import Graph
 import numpy as np
 import scipy as scipy
 import sys    # sys.setdefaultencoding is cancelled
@@ -69,8 +69,8 @@ class node2vec:
         self.iteraciones = iteraciones
     
         # Setting up Neo4j DB
-        neo4j.authenticate("http://localhost:"+str(self.port), self.user, self.pss)
-        self.graph_db = neo4j.GraphDatabaseService("http://neo4j:"+pss+"@localhost:"+str(self.port)+"/db/data/")
+        #neo4j.authenticate("http://localhost:"+str(self.port), self.user, self.pss)
+        self.graph_db = Graph("http://neo4j:"+pss+"@localhost:"+str(self.port)+"/db/data/")
         batches = 100
 
         if not os.path.exists("models/" + self.bd +".npy") or not os.path.exists("models/" + self.bd +"l-degree.npy"):

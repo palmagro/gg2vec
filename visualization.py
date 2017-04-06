@@ -160,18 +160,25 @@ def all_figure(n2v,tp,ntypes,legend):
     o.circle('x', 'y', size=10, source=source,color=c,alpha=0.5 )
     return o
 
-def all_links_figure(n2v,tp,ltypes,legend):
+def all_links_figure(n2v,tp,ltypes,legend,treshold):
     showed = []
     pal = pallete("links") 
     #mds = manifold.TSNE(n_components=2)
     mds = manifold.MDS(n_components=2, metric=True, n_init=4, max_iter=300, verbose=0, eps=0.001, n_jobs=1, random_state=None, dissimilarity='euclidean')
     X = []
     C = []
+    names = []
+    punt = []
     for idx,nt in enumerate(ltypes):
         for a in n2v.r_types[nt]:
             if random.random() < tp[idx]:    
                 X.append(a["v"])
-                C.append(idx)
+                C.append(a["t"])
+                if a["t"] not in names:
+                    punt.append(1)
+                    names.append(a["t"])
+                else:
+                    punt[names.index(a["t"])] += 1       
 
     result = mds.fit_transform(np.asfarray(X,dtype='float'))
     x = []
@@ -181,13 +188,14 @@ def all_links_figure(n2v,tp,ltypes,legend):
     for idx,v in enumerate(result):
         x.append(result[idx][0])
         y.append(result[idx][1])
-        c.append(pal[C[idx]])
+        c.append(pal[min(names.index(C[idx]),len(pal))])
+#        label.append(C[idx])
 
     source = ColumnDataSource(data=dict(x=x,y=y, label=label))
     #Nodes Plotting
     o = figure(title="All Links",plot_height=n2v.ploth,plot_width=n2v.plotw)
-    for idx,rt in enumerate(n2v.r_types):
-        if rt in ltypes:   
+    for idx,rt in enumerate(names):
+        if punt[idx] > treshold:
             o.line([], [], color=pal[idx],legend=rt,line_width=1.5)
     o.text('x', 'y', label, source=source, )
     o.circle('x', 'y', size=10, source=source,color=c )
