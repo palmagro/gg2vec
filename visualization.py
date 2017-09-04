@@ -13,7 +13,7 @@ from bokeh.models import(
 from bokeh.charts import Line
 import math 
 from aux import *
-from node2vec import *
+from gg2vec import *
 import colorsys
 colormapdb = ["#0000FF","#FF0000","#00FF00","#682F79","#a6cee3", "#444444", "#1f78b4", "#b2df8a", "#33a02c","#fb9a99","FF6600"]
 

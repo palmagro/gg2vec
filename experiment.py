@@ -1,5 +1,5 @@
 import pydot 
-from node2vec import *
+from gg2vec import *
 from sklearn import neighbors,metrics
 from credentials import *
 import sys    # sys.setdefaultencoding is cancelled by site.py
