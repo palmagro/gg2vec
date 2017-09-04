@@ -61,17 +61,17 @@ class experiment:
                 t = 0
                 for it in range(self.iteraciones):
                     if self.param == "ns":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,val,200,6,self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,val,200,6,self.mode,[],self.iteraciones)
                         k = 3
                     if self.param == "l":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,val,self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,val,self.mode,[],self.iteraciones)
                         k = 3
                     if self.param == "ndim":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,val,6,self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,400000,val,6,self.mode,[],self.iteraciones)
                         k = 3
                     #si lo que vamos a estudiar no son los parametros libres de la inmersion, fijamos dichos parametros a sus valores optimos segun BD
                     if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
                     n2v.learn(self.mode,self.trainset_p,False,it)
                     if self.param == "ns" or self.param == "ndim" or  self.param == "l":
                         result = predict("k",n2v.nodes_pos,n2v.nodes_type,val,self.trainset_p)
@@ -123,7 +123,7 @@ class experiment:
             matrices = [None] * self.iteraciones
             #repetimos para self.iteraciones experimentos
             for it in range(self.iteraciones):
-                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
+                n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
                 n2v.learn(self.mode,self.trainset_p,False,it)
                 #generamos un diccionario para saber las posiciones de cada tipo de nodo en la matriz
                 dic = dict()
@@ -198,8 +198,8 @@ class experiment:
         if not os.path.exists("models/nmultitype_conf_matrix" + self.bd +"ts"+cadena+"Promedio"+str(nfolds)+".p") or True:
             #Creamos la matriz de matrices donde guardaremos los resultados parciales
             matrices = [None] * nfolds * nfolds
-            #Creamos/Recuperamos el modelo Node2Vec
-            n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,1000,20,6,self.mode,[],1)
+            #Creamos/Recuperamos el modelo gg2vec
+            n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,1000,20,6,self.mode,[],1)
             n2v.learn("normal",0,False,0)
             #Creamos los arrays X e Y, anadiendo
             X = []
@@ -321,17 +321,17 @@ class experiment:
                 final = 0
                 for it in range(self.iteraciones):
                     if self.param == "ns":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,val,200,6,self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,val,200,6,self.mode,[],self.iteraciones)
                         k = 3
                     if self.param == "l":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,val,self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,val,self.mode,[],self.iteraciones)
                         k = 3
                     if self.param == "ndim":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,val,6,self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,400000,val,6,self.mode,[],self.iteraciones)
                         k = 3
                     #si lo que vamos a estudiar no son los parametros libres de la inmersion, fijamos dichos parametros a sus valores optimos segun BD
                     if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
                     n2v.learn(self.mode,self.trainset_p,False,it)
                     #k-neighbors for each node
                     total = 0
@@ -384,7 +384,7 @@ class experiment:
             matrices = [None] * self.iteraciones
             #repetimos para self.iteraciones experimentos
             for it in range(self.iteraciones):
-                n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
+                n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
                 n2v.learn(self.mode,self.trainset_p,False,it)
                 #generamos un diccionario para saber las posiciones de cada tipo de nodo en la matriz
                 dic = dict()
@@ -481,17 +481,17 @@ class experiment:
                 final = 0
                 for it in range(self.iteraciones):
                     if self.param == "ns":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,val,200,6,self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,val,200,6,self.mode,[],self.iteraciones)
                         k = 3
                     if self.param == "l":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,val,self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,val,self.mode,[],self.iteraciones)
                         k = 3
                     if self.param == "ndim":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,val,6,self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,400000,val,6,self.mode,[],self.iteraciones)
                         k = 3
                     #si lo que vamos a estudiar no son los parametros libres de la inmersion, fijamos dichos parametros a sus valores optimos segun BD
                     if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
                     n2v.learn(self.mode,self.trainset_p,True,it)
                     total = 0
                     parcial = 0
@@ -631,17 +631,17 @@ class experiment:
                 final = 0
                 for it in range(self.iteraciones):
                     if self.param == "ns":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,val,200,6,self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,val,200,6,self.mode,[],self.iteraciones)
                         k = 3
                     if self.param == "l":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,val,self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,400000,200,val,self.mode,[],self.iteraciones)
                         k = 3
                     if self.param == "ndim":
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,400000,val,6,self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,400000,val,6,self.mode,[],self.iteraciones)
                         k = 3
                     #si lo que vamos a estudiar no son los parametros libres de la inmersion, fijamos dichos parametros a sus valores optimos segun BD
                     if not (self.param == "ns" or self.param == "ndim" or self.param == "l"):
-                        n2v = node2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
+                        n2v = gg2vec(self.bd,self.port,self.user,self.pss,self.label,optimos[self.bd][0],optimos[self.bd][1],optimos[self.bd][2],self.mode,[],self.iteraciones)
                     n2v.learn(self.mode,0,False,it)
                     parcial = 0
                     n2v.r_analysis()
