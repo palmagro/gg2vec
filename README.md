@@ -19,6 +19,11 @@ Generates a num_dim dimension embedding representation of the indicated Neo4j Da
 The library offers some tools to visualize a Neo4j DB embedding. 
 
 ```python
+all_links_figure(cine,[0.03],["GENRE"],True,10)
+#all_links_figure()
+
+```
+
 n2v.all_figure()
 
 n2v.nodes_figure()
