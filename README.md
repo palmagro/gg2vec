@@ -10,12 +10,11 @@ from experiment import *
 from composite_experiment import *
 
 cine = gg2vec("cine",7474,"neo4j","******","name",400000,200,6,"normal",[],1)
-#n2v = gg2vec(bd_name,bd_port,bd_username,bd_password,label,num_sentences,num_dim,windows_size,mode,traversals,num_iterations)
+#gg2vec(bd_name,bd_port,bd_username,bd_password,label,num_sentences,num_dim,windows_size,mode,traversals,num_iterations)
 ```
+Generates a num_dim dimension embedding representation of the indicated Neo4j Database. This method trains a CBOW neural network with pairs word-context (w,C) where w is a node and C is a window of his context (properties and neighbours). The parameter "mode" can be "normal" or "degree". Normal mode generates random (w,C) pairs. Degree mode generates (w,C) where the probability to generate a pair (w,C) is proportionally to degree of node w.
 
-Generates a num_dim dimension embedding representation of the Neo4j Database located in bd_url. This method trains a neural network with pairs word-context (w,C) where w is a node and C is a window of his context (properties and neighbours). The last parameter "mode" can be "normal" or "degree". Normal mode generates random (w,C) pairs. Degree mode generates (w,C) where the probability to generate a pair (w,C) is proportionally to degree of node w.
-
-The library offers some tools to analyze a Neo4j DB using Deep Learning. 
+The library offers some tools to visualize a Neo4j DB embedding. 
 
 n2v.all_figure()
 
