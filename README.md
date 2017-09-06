@@ -20,6 +20,14 @@ The library visualization.py offers some tools to visualize a Neo4j DB embedding
 
 ```python
 from visualization import *
+all_figure(N2v,[1],["Genre"],True)
+#all_figure()
+```
+![png](https://s26.postimg.org/tc491k5kp/cine_all_nodes.png)
+
+
+```python
+from visualization import *
 all_links_figure(cine,[0.03],["GENRE"],True,10)
 #all_links_figure()
 ```
