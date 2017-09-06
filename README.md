@@ -20,7 +20,7 @@ The library visualization.py offers some tools to visualize a Neo4j DB embedding
 
 ```python
 from visualization import *
-all_figure(N2v,[0.02,0.02,1],["Actor","Movie","Genre"],False)
+all_figure(cine,[0.02,0.02,1],["Actor","Movie","Genre"],False)
 #all_figure()
 ```
 ![png](https://s26.postimg.org/71ge1l8ah/cine_all_nodes_no_names.png)
@@ -33,7 +33,7 @@ all_links_figure(cine,[0.03],["GENRE"],True,10)
 ```
 ![png](https://s26.postimg.org/tc491k5kp/cine_all_nodes.png)
 ```python
-show((all_figure(N2v,[0.02,0.02,1],["Actor","Movie","Genre"],False)))
+show((all_figure(cine,[0.02,0.02,1],["Actor","Movie","Genre"],False)))
 #all_figure()
 ```
 ![png](https://s26.postimg.org/9y3f1ve49/cine_all_links.png)
