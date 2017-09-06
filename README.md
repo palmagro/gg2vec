@@ -1,8 +1,8 @@
-## Learning Neo4j DB content embedding using word2vec architectures
+## Learning Neo4j DB content embedding using neural encoders
 
 "In this work a new machine learning approach to the study of Generalized Graphs as semantic data structures is presented. It shows how vector representations that maintain semantic and topological features of the original data can be obtained from neural encoding architectures and considering the topological properties of the graph. Also, semantic features of these new representations are tested by using some machine learning tasks and new directions on efficient link discovery methodologies on large relational datasets are investigated."
 
-We present **gg2vec**, a python library to perform vector space embeddings of generalized graphs stored in a Neo4j DB. Next we we will demonstrate the capabilities of the library using the Movie Database (available in https://neo4j.com/developer/movie-database/ to allow reproducibility) as example data. 
+We present **gg2vec**, a python library to perform vector space embeddings of generalized graphs stored in a Neo4j DB. **gg2vec** uses word2vec neuroal encoder architectures (https://arxiv.org/abs/1301.3781) to obtain vector representations of the elements of a Neo4j graph. Next we we will demonstrate the capabilities of the library using the Movie Database (available in https://neo4j.com/developer/movie-database/ to allow reproducibility) as example data. 
 
 ```python
 from gg2vec import *
