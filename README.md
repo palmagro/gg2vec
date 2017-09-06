@@ -21,8 +21,8 @@ The library offers some tools to visualize a Neo4j DB embedding.
 ```python
 all_links_figure(cine,[0.03],["GENRE"],True,10)
 #all_links_figure()
-![png](https://s26.postimg.org/9y3f1ve49/cine_all_links.png)
 ```
+![png](https://s26.postimg.org/9y3f1ve49/cine_all_links.png)
 
 n2v.all_figure()
 
