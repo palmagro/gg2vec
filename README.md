@@ -38,8 +38,4 @@ all_links_figure(cine,[0.03],["GENRE"],True,10)
 ```
 ![png](https://s26.postimg.org/9y3f1ve49/cine_all_links.png)
 
-In addition, entity retrieval query tool is provided by **gg2vec** library. This tools use to be faster in the new vector space than in the original graph space. 
-
-```python
-#gg2vec.predice(source,rel_type,fast?,top_n,filter?)
-```
+CBOW architecture implementation of \textit{Gensim} toolkit \footnote{\url{https://radimrehurek.com/gensim}} (version 0.12.4) has been used.
