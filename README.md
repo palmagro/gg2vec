@@ -12,7 +12,7 @@ from composite_experiment import *
 cine = gg2vec("cine",7474,"neo4j","******","name",400000,200,6,"normal",[],1)
 #gg2vec(bd_name,bd_port,bd_username,bd_password,label,num_sentences,num_dim,windows_size,mode,traversals,num_iterations)
 cine.learn("normal",0.5,False,0)
-#learn(mode,freq_of_del_links,del_links?,n_of_repetitions)
+#gg2vec.learn(mode,freq_of_del_links,del_links?,n_of_repetitions)
 ```
 Generates a num_dim dimension embedding representation of the indicated Neo4j Database. This method trains a CBOW neural network with pairs word-context (w,C) where w is a node and C is a window of his context (properties and neighbours). The parameter "mode" can be "normal" or "degree". Normal mode generates random (w,C) pairs. Degree mode generates (w,C) where the probability to generate a pair (w,C) is proportionally to degree of node w.
 
@@ -38,13 +38,8 @@ all_links_figure(cine,[0.03],["GENRE"],True,10)
 ```
 ![png](https://s26.postimg.org/9y3f1ve49/cine_all_links.png)
 
-In addition, entity retrieval and long distance query tools are provided too by **gg2vec** library. This tools use to be faster in the new vector space than in the original graph space. 
+In addition, entity retrieval query tool is provided by **gg2vec** library. This tools use to be faster in the new vector space than in the original graph space. 
 
 ```python
-tal y tal metodo se usan para entity retrieval o long distance query
-```
-Next, we present some evaluations that demonstrate the power of this tools.
-
-```python
-
+#gg2vec.predice(source,rel_type,fast?,top_n,filter?)
 ```
