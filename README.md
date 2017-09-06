@@ -20,10 +20,10 @@ The library visualization.py offers some tools to visualize a Neo4j DB embedding
 
 ```python
 from visualization import *
-all_figure(N2v,[1],["Genre"],True)
+all_figure(N2v,[0.02,0.02,1],["Actor","Movie","Genre"],False)
 #all_figure()
 ```
-![png](https://s26.postimg.org/tc491k5kp/cine_all_nodes.png)
+![png](https://s26.postimg.org/71ge1l8ah/cine_all_nodes_no_names.png)
 
 
 ```python
@@ -37,6 +37,8 @@ show((all_figure(N2v,[0.02,0.02,1],["Actor","Movie","Genre"],False)))all_links_f
 #all_figure()
 ```
 ![png](https://s26.postimg.org/9y3f1ve49/cine_all_links.png)
+
+**gg2vec** libary allows to get the closest node to a given one fulfilling some restrictions given by the user. In addition, entity retrieval and long distance query tools are provided too by **gg2vec** library.
 
 n2v.all_figure()
 
