@@ -38,16 +38,13 @@ all_links_figure(cine,[0.03],["GENRE"],True,10)
 ```
 ![png](https://s26.postimg.org/9y3f1ve49/cine_all_links.png)
 
-**gg2vec** libary allows to get the closest node to a given one fulfilling some restrictions given by the user. In addition, entity retrieval and long distance query tools are provided too by **gg2vec** library.
+In addition, entity retrieval and long distance query tools are provided too by **gg2vec** library. This tools use to be faster in the new vector space than in the original graph space. 
 
-n2v.all_figure()
+```python
+tal y tal metodo se usan para entity retrieval o long distance query
+```
+Next, we present some evaluations that demonstrate the power of this tools.
 
-n2v.nodes_figure()
+```python
 
-n2v.links_figure()
-
-n2v.angles_figure()
-
-In addition, link prediction and entity resolution tools are provided too by node2vec library.
-
-Lets watch an example (Asterix)...
+```
