@@ -31,9 +31,9 @@ from visualization import *
 all_links_figure(cine,[0.03],["GENRE"],True,10)
 #all_links_figure()
 ```
-![png](https://s26.postimg.org/9y3f1ve49/cine_all_links.png)
+![png](https://s26.postimg.org/tc491k5kp/cine_all_nodes.png)
 ```python
-show((all_figure(N2v,[0.02,0.02,1],["Actor","Movie","Genre"],False)))all_links_figure(cine,[0.03],["GENRE"],True,10)
+show((all_figure(N2v,[0.02,0.02,1],["Actor","Movie","Genre"],False)))
 #all_figure()
 ```
 ![png](https://s26.postimg.org/9y3f1ve49/cine_all_links.png)
