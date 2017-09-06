@@ -38,4 +38,4 @@ all_links_figure(cine,[0.03],["GENRE"],True,10)
 ```
 ![png](https://s26.postimg.org/9y3f1ve49/cine_all_links.png)
 
-CBOW architecture implementation of \textit{Gensim} toolkit \footnote{\url{https://radimrehurek.com/gensim}} (version 0.12.4) has been used.
+A modificaion on CBOW architecture implementation of Gensim toolkit (https://radimrehurek.com/gensim) (version 0.12.4) is necessary in order to allow the system works properly. For further information please contact me.
